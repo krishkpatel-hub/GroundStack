@@ -99,6 +99,8 @@ class FeedbackRepository:
         existing = row.scalar_one_or_none()
         if existing:
             return existing
+        if feedback.source_platform == "discord" or not feedback.training_eligible:
+            raise FeedbackError("Discord feedback is not eligible for training data.")
         candidate = TrainingCandidate(
             message_id=message.id,
             feedback_id=feedback.id,
@@ -108,6 +110,8 @@ class FeedbackRepository:
             citation_references=feedback.reported_citation_ids,
             redaction_status="pending",
             provenance_status="pending",
+            source_platform=feedback.source_platform,
+            training_eligible=feedback.training_eligible,
         )
         self.session.add(candidate)
         await self.session.flush()
@@ -119,6 +123,8 @@ class FeedbackRepository:
         candidate = await self.session.get(TrainingCandidate, candidate_id)
         if candidate is None:
             raise FeedbackError("Training candidate not found.")
+        if candidate.source_platform == "discord" or not candidate.training_eligible:
+            raise FeedbackError("Discord data cannot be approved for training.")
         if candidate.redaction_status != "approved" or candidate.provenance_status != "approved":
             raise FeedbackError(
                 "Candidate requires approved redaction and provenance before approval."

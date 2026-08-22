@@ -183,6 +183,8 @@ class MessageFeedback(Base):
     reported_citation_ids: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     client_request_id: Mapped[str] = mapped_column(String(120), nullable=False)
     message_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    source_platform: Mapped[str] = mapped_column(String(32), nullable=False, default="web")
+    training_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -199,6 +201,7 @@ class TrainingCandidate(Base):
         ),
         Index("ix_training_candidates_status", "status"),
         Index("ix_training_candidates_message_id", "message_id"),
+        Index("ix_training_candidates_training_eligible", "training_eligible"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -219,6 +222,8 @@ class TrainingCandidate(Base):
     provenance_status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
     reviewer_notes: Mapped[str | None] = mapped_column(String(2000))
     reviewer_identifier: Mapped[str | None] = mapped_column(String(120))
+    source_platform: Mapped[str] = mapped_column(String(32), nullable=False, default="web")
+    training_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     dataset_export_status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="not_exported"
     )

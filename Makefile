@@ -1,4 +1,4 @@
-.PHONY: setup dev test lint format typecheck db-up db-down migrate migration-check predeploy deploy-check migrate-production seed-demo verify-demo-data db-smoke api-dev web-dev eval-retrieval benchmark-retrieval validate-training-data prepare-training-data training-preflight train-qlora compare-models training-test review-training-candidates export-approved-training-data eval eval-generation eval-security compare-prompts load-smoke-fake load-sustained-fake load-300-real
+.PHONY: setup dev test lint format typecheck db-up db-down migrate migration-check predeploy deploy-check migrate-production seed-demo verify-demo-data db-smoke discord-worker-health discord-worker-once discord-commands-json api-dev web-dev eval-retrieval benchmark-retrieval validate-training-data prepare-training-data training-preflight train-qlora compare-models training-test review-training-candidates export-approved-training-data eval eval-generation eval-security compare-prompts load-smoke-fake load-sustained-fake load-300-real
 
 setup:
 	npm install
@@ -60,6 +60,15 @@ verify-demo-data:
 
 db-smoke:
 	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/db_smoke.py
+
+discord-worker-health:
+	cd apps/api && . .venv/bin/activate && python -m app.cli.discord_worker --healthcheck
+
+discord-worker-once:
+	cd apps/api && . .venv/bin/activate && python -m app.cli.discord_worker
+
+discord-commands-json:
+	cd apps/api && . .venv/bin/activate && python -m app.cli.discord_commands
 
 ingest:
 	cd apps/api && . .venv/bin/activate && python -m app.cli.ingest "$(FILE)"

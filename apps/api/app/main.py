@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from app.api.integrations.discord import router as discord_integrations_router
 from app.api.v1.router import api_router
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
@@ -123,6 +124,7 @@ def create_app() -> FastAPI:
     app.add_middleware(MetricsMiddleware)
     register_exception_handlers(app)
     app.include_router(api_router, prefix="/api/v1")
+    app.include_router(discord_integrations_router)
     return app
 
 

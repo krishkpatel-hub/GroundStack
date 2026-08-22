@@ -16,6 +16,15 @@ from app.models.conversation import (
     MessageFeedback,
     TrainingCandidate,
 )
+from app.models.discord import (
+    DiscordControl,
+    DiscordDeletionRequest,
+    DiscordEscalation,
+    DiscordFeedback,
+    DiscordGuildConfig,
+    DiscordInteraction,
+    DiscordJob,
+)
 from app.models.knowledge import Document, DocumentChunk, IngestionJob, KnowledgeSource
 
 config = context.config
@@ -34,6 +43,13 @@ _models = (
     TrainingCandidate,
     EvaluationRun,
     EvaluationResult,
+    DiscordGuildConfig,
+    DiscordInteraction,
+    DiscordJob,
+    DiscordFeedback,
+    DiscordEscalation,
+    DiscordDeletionRequest,
+    DiscordControl,
     KnowledgeSource,
     Document,
     DocumentChunk,

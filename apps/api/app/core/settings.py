@@ -109,6 +109,21 @@ class Settings(BaseSettings):
     demo_redis_required: bool = False
     demo_upload_limit_bytes: int = Field(default=0, ge=0)
     demo_max_conversations: int = Field(default=5, ge=1, le=50)
+    discord_integration_enabled: bool = False
+    discord_application_id: str = ""
+    discord_public_key: str = ""
+    discord_bot_token: str = ""
+    discord_interaction_token_encryption_key: str = ""
+    discord_identity_hmac_key: str = ""
+    discord_signature_tolerance_seconds: int = Field(default=300, ge=30, le=900)
+    discord_default_retention_days: int = Field(default=30, ge=1, le=365)
+    discord_max_question_length: int = Field(default=600, ge=20, le=2000)
+    discord_queue_ttl_seconds: int = Field(default=900, ge=60, le=3600)
+    discord_worker_batch_size: int = Field(default=5, ge=1, le=25)
+    discord_worker_max_retries: int = Field(default=2, ge=0, le=5)
+    discord_response_base_url: str = "https://discord.com/api/v10"
+    discord_full_answer_base_url: str = ""
+    discord_allow_dms: bool = False
     dev_auth_bypass_enabled: bool = True
     trusted_hosts: list[str] = ["localhost", "127.0.0.1", "testserver", "test"]
     trusted_proxy_hosts: list[str] = []
@@ -193,6 +208,24 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Demo OpenAI-compatible inference requires LLM_BASE_URL, "
                     "LLM_API_KEY, and LLM_MODEL."
+                )
+        if self.discord_integration_enabled:
+            missing_discord = [
+                name
+                for name, value in {
+                    "DISCORD_APPLICATION_ID": self.discord_application_id,
+                    "DISCORD_PUBLIC_KEY": self.discord_public_key,
+                    "DISCORD_BOT_TOKEN": self.discord_bot_token,
+                    "DISCORD_INTERACTION_TOKEN_ENCRYPTION_KEY": (
+                        self.discord_interaction_token_encryption_key
+                    ),
+                    "DISCORD_IDENTITY_HMAC_KEY": self.discord_identity_hmac_key,
+                }.items()
+                if not value
+            ]
+            if missing_discord:
+                raise ValueError(
+                    "Discord integration is enabled but missing: " + ", ".join(missing_discord)
                 )
         if self.app_env == "test" and self.llm_provider not in {"fake", "ollama"}:
             raise ValueError(

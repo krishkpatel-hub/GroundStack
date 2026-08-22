@@ -117,6 +117,12 @@ async def _counter_get(key: str) -> int:
     return int(value or 0)
 
 
+async def _counter_decr(key: str) -> None:
+    client = await _redis()
+    if client is not None:
+        await client.decr(key)
+
+
 async def redis_connectivity_ok() -> bool:
     client = await _redis()
     if client is None:
@@ -229,6 +235,24 @@ async def record_provider_failure(category: str | None) -> None:
 @asynccontextmanager
 async def distributed_generation_slot() -> AsyncIterator[None]:
     settings = get_settings()
+    client = await _redis()
+    if client is not None:
+        key = f"{_settings_prefix()}:generation_active"
+        active = await client.incr(key)
+        await client.expire(key, max(30, int(settings.effective_llm_timeout_seconds) + 10))
+        if active > settings.effective_generation_concurrency:
+            await client.decr(key)
+            raise HTTPException(
+                status_code=503,
+                detail="The public demo is busy. Please retry shortly.",
+                headers={"Retry-After": "3"},
+            )
+        try:
+            yield
+        finally:
+            await _counter_decr(key)
+        return
+
     global _generation_lock, _generation_lock_size
     if _generation_lock_size != settings.effective_generation_concurrency:
         _generation_lock = asyncio.Semaphore(settings.effective_generation_concurrency)

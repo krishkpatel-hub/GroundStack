@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   applicationName: "GroundStack",
   openGraph: {
     title: "GroundStack",
-    description: "A portfolio-grade grounded AI assistant with citations and evaluation.",
+    description:
+      "A portfolio-grade grounded AI assistant with citations and evaluation.",
     type: "website",
   },
   alternates: {

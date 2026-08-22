@@ -1,0 +1,70 @@
+{
+  "corpus_version": "demo-corpus-2026-08-22",
+  "ingestion_date": "2026-08-22",
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "embedding_dimension": 384,
+  "documents": [
+    {
+      "title": "GroundStack README",
+      "path": "README.md",
+      "origin": "GroundStack repository documentation",
+      "permission": "Project-authored portfolio documentation",
+      "checksum_sha256": "c85844adfddee608b22d77f5b763a3b10d23a7ed38736721362e7777f8c7ae60",
+      "version": "initial-main",
+      "expected_chunk_count": "computed during ingestion"
+    },
+    {
+      "title": "Architecture",
+      "path": "docs/architecture.md",
+      "origin": "GroundStack repository documentation",
+      "permission": "Project-authored architecture documentation",
+      "checksum_sha256": "6d4a0de5eb029962099f4754ba6e607ce743da581131407fc2b9517fc2f9d776",
+      "version": "initial-main",
+      "expected_chunk_count": "computed during ingestion"
+    },
+    {
+      "title": "Security",
+      "path": "docs/security.md",
+      "origin": "GroundStack repository documentation",
+      "permission": "Project-authored security documentation",
+      "checksum_sha256": "a664fed28a8df91d3a5d0df34eb9602058bb47955e527126944c42dce1f1164e",
+      "version": "initial-main",
+      "expected_chunk_count": "computed during ingestion"
+    },
+    {
+      "title": "Synthetic Setup Guide",
+      "path": "apps/api/dev-data/knowledge-base/setup.md",
+      "origin": "Synthetic technical support document",
+      "permission": "Project-authored synthetic demo content",
+      "checksum_sha256": "6a2381d93b0286d9bb8bc059b346b0b404b140b690a63cde084b9ca74f6e09d4",
+      "version": "initial-main",
+      "expected_chunk_count": "computed during ingestion"
+    },
+    {
+      "title": "Synthetic Troubleshooting Guide",
+      "path": "apps/api/dev-data/knowledge-base/troubleshooting.md",
+      "origin": "Synthetic technical support document",
+      "permission": "Project-authored synthetic demo content",
+      "checksum_sha256": "4ce6631b224dc87465e6b51af80236bb3bbdf23a65e7e3dc858e060240c48a4e",
+      "version": "initial-main",
+      "expected_chunk_count": "computed during ingestion"
+    },
+    {
+      "title": "Synthetic API Error Guide",
+      "path": "apps/api/dev-data/knowledge-base/api-errors.txt",
+      "origin": "Synthetic technical support document",
+      "permission": "Project-authored synthetic demo content",
+      "checksum_sha256": "e0fb6decb34dc80fd0507ee8b668afaeeab4029338fed3ea7c155a015148b2f4",
+      "version": "initial-main",
+      "expected_chunk_count": "computed during ingestion"
+    }
+  ],
+  "coverage_scenarios": [
+    "fully supported answer",
+    "multi-source answer",
+    "partially supported answer",
+    "insufficient-evidence response",
+    "citation opening by section or page metadata",
+    "prompt-injection text treated as untrusted document content"
+  ]
+}

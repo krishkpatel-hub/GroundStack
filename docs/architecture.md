@@ -25,6 +25,10 @@ flowchart LR
   Context --> LLM[Ollama or OpenAI-Compatible LLM]
   LLM --> Validate[Citation Validation + Repair]
   Validate --> Persist[Conversations, Messages, Generation Runs]
+  Discord[Discord Slash Commands] --> DiscordAPI[Interaction Endpoint]
+  DiscordAPI --> DiscordQueue[Encrypted Discord Jobs]
+  DiscordQueue --> ChatAPI
+  DiscordAPI --> DiscordAdmin[Admin Config + Escalations]
   API --> DB[(PostgreSQL + pgvector)]
   Pipeline --> DB
   RetrievalAPI --> DB
@@ -59,6 +63,10 @@ flowchart LR
   context packing is deterministic, LLM providers live behind `LLMProvider`, and
   generated answers are persisted with provider, model, prompt checksum, token usage,
   latency, finish reason, and citation links.
+- Discord is an adapter, not a separate bot brain. Signed application-command
+  interactions are verified by FastAPI, queued as encrypted jobs, answered through
+  the same retrieval/reranking/generation/citation-validation path, and rendered
+  with Discord-specific limits and mention suppression.
 
 ## Ingestion Flow
 
@@ -114,3 +122,6 @@ multicast, reserved, or metadata-style addresses.
   embedding orchestration, persistence, and ingestion reports.
 - `app/services/generation` owns prompt loading, context budgeting, citation
   validation, conversation persistence helpers, and grounded answer orchestration.
+- `app/services/discord` owns signature verification, command parsing, privacy-safe
+  identity, queued job persistence, Discord answer rendering, command-registration
+  payload generation, and interaction-token encryption.

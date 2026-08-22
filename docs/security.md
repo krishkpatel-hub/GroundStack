@@ -63,6 +63,23 @@ headers, request IDs, body-size checks, CSRF protection for cookie-authenticated
 methods, sanitized error responses, and metrics-token protection. File ingestion also
 checks extension, MIME type, file signature, and configured size limits.
 
+## Discord Integration
+
+Discord requests are accepted only through signed application-command interactions.
+The `/integrations/discord/interactions` endpoint verifies the Ed25519 signature
+against the exact raw body, validates timestamp freshness, deduplicates interaction
+IDs, and returns safe Discord responses with `allowed_mentions` disabled. Retrieval
+and generation run in a worker, not in the initial interaction window.
+
+Discord tokens are encrypted while queued and cleared after delivery. User identity
+is minimized to a keyed HMAC for ownership, rate limits, deletion, and feedback.
+GroundStack does not require the Message Content intent, does not scan normal
+messages, does not store usernames, and disables DMs by default.
+
+Discord records are marked `source_platform=discord` and `training_eligible=false`.
+The training-candidate API excludes them and rejects approval attempts, so Discord
+feedback cannot silently become model-training data.
+
 ## Current Limits
 
 OIDC sessions currently store the validated access token in an HttpOnly cookie rather

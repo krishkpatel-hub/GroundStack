@@ -29,6 +29,14 @@ Values below are placeholders. Do not commit real secrets.
 | `DOCS_ENABLED` | API | dev only | no | `false` | API docs exposure | false in demo/prod | n/a | yes |
 | `DEV_AUTH_BYPASS_ENABLED` | API | local dev only | no | `false` | Development auth bypass | false in demo/prod | n/a | yes |
 | `NEXT_PUBLIC_API_BASE_URL` | Web | all | no | `https://api.example.com` | Browser-visible API base URL | never contains secrets | n/a | redeploy web |
+| `DISCORD_INTEGRATION_ENABLED` | API, worker | Discord sandbox/prod | no | `false` | Enables signed Discord interactions only when credentials are present | startup validation requires all Discord secrets when true | n/a | yes |
+| `DISCORD_APPLICATION_ID` | API, worker | Discord sandbox/prod | secret-adjacent | `set-in-dashboard` | Discord application/client ID for interactions and webhook followups | numeric Discord snowflake | rotate app if compromised | yes |
+| `DISCORD_PUBLIC_KEY` | API | Discord sandbox/prod | no | `set-in-dashboard` | Ed25519 public key for request signature verification | hex public key from Discord app | rotate in Discord portal | yes |
+| `DISCORD_BOT_TOKEN` | API, worker | Discord sandbox/prod | yes | `set-in-dashboard` | Bot token for future command registration and moderator-channel delivery | never exposed to frontend or logs | rotate immediately if exposed | yes |
+| `DISCORD_INTERACTION_TOKEN_ENCRYPTION_KEY` | API, worker | Discord sandbox/prod | yes | `set-in-dashboard` | Encrypts temporary interaction tokens while queued | Fernet key or high-entropy secret | rotate with queue drain | yes |
+| `DISCORD_IDENTITY_HMAC_KEY` | API, worker | Discord sandbox/prod | yes | `set-in-dashboard` | Creates privacy-preserving Discord user identifiers | high-entropy secret | rotate with documented ownership impact | yes |
+| `DISCORD_DEFAULT_RETENTION_DAYS` | API | Discord sandbox/prod | no | `30` | Default retention for controls and guild config | 1-365 | n/a | yes |
+| `DISCORD_ALLOW_DMS` | API | Discord sandbox/prod | no | `false` | Allows direct-message use when explicitly enabled | false by default | n/a | yes |
 
 Changing secret values in Render, Vercel, Neon, Upstash, or the inference provider should be followed
 by a redeploy or service restart where that platform requires it.

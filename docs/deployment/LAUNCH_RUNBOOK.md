@@ -18,6 +18,7 @@ Create only free or explicitly approved resources:
 - Render web service for `apps/api/Dockerfile`.
 - Vercel project for `apps/web`.
 - OpenAI-compatible hosted LLaMA inference endpoint supplied by the user.
+- Optional Discord application credentials only after explicit owner approval.
 
 Do not paste secrets into repository files. Set them in provider dashboards.
 
@@ -30,6 +31,20 @@ Do not paste secrets into repository files. Set them in provider dashboards.
 5. Run `make seed-demo` and `make verify-demo-data`.
 6. Verify `/api/v1/health/live`, `/api/v1/health/ready`, and `/api/v1/demo/availability`.
 7. Turn on `DEMO_CHAT_ENABLED=true`.
+
+## Optional Discord Sandbox
+
+1. Keep `DISCORD_INTEGRATION_ENABLED=false` until the public API endpoint is reachable.
+2. Set Discord secrets only in the deployment dashboard.
+3. Verify the interaction endpoint with Discord's PING challenge.
+4. Run `make discord-commands-json` locally and review the minimal scopes.
+5. Register guild-scoped commands in a private development server using the reviewed payload.
+6. Start the private Discord worker service.
+7. Enable one test guild and one allowed channel from `/discord` in the admin UI.
+8. Test `/ask`, feedback, escalation, and `/delete-my-data`.
+
+Do not create a public bot listing, install into external servers, or enable production
+Discord use without explicit approval.
 
 ## Checkpoint D: Frontend Launch
 

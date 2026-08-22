@@ -6,5 +6,6 @@
 4. Open a citation and show the source title, section metadata, and excerpt.
 5. Ask an unsupported question and show the insufficient-evidence behavior.
 6. Briefly switch to local admin views for source inventory or evaluation.
-7. Close with the architecture: Next.js, FastAPI, pgvector retrieval, reranking, LLaMA-compatible
-   generation, feedback review, and launch guardrails.
+7. Open the Discord integration page and show the server config plus escalation queue.
+8. Close with the architecture: Next.js, FastAPI, pgvector retrieval, reranking, LLaMA-compatible
+   generation, Discord slash commands, feedback review, and launch guardrails.

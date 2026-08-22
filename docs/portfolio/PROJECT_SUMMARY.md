@@ -10,3 +10,9 @@ selection. Fine-tuning is supported as a controlled workflow, but it does not re
 because answers need source-specific grounding and current documentation. The project also includes
 auth boundaries, admin-only ingestion, evaluation dashboards, deployment guardrails, and public-demo
 cost controls.
+
+The Discord integration extends the same grounded pipeline to explicit slash commands. It verifies
+signed interactions, queues encrypted jobs for a private worker, renders citation-aware Discord
+answers, supports feedback and human escalation, and keeps Discord data out of model-training
+workflows. The repository documents sandbox setup but does not claim a production Discord
+installation.

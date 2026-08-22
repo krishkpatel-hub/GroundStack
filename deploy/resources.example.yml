@@ -1,0 +1,31 @@
+services:
+  web:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 512M
+  api:
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+  postgres:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+  redis:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+  ollama:
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G

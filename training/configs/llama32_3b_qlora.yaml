@@ -1,0 +1,43 @@
+base_model: meta-llama/Llama-3.2-3B-Instruct
+requires_llama_license_acknowledgement: true
+prompt_version: grounded_answer/v1
+model_variant: fine_tuned_adapter
+dataset:
+  name: groundstack-seed-dev
+  version: 0.1.0
+  source_path: training/data/seed/groundstack_seed.jsonl
+  output_dir: training/data/processed/groundstack-seed-dev-0.1.0
+  near_duplicate_threshold: 0.94
+split:
+  seed: 1729
+  train_ratio: 0.7
+  validation_ratio: 0.15
+qlora:
+  load_in_4bit: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_use_double_quant: true
+  compute_dtype: bf16_if_available_else_fp16
+  gradient_checkpointing: true
+  disable_model_cache: true
+lora:
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+training:
+  learning_rate: 0.0002
+  epochs: 2
+  max_sequence_length: 2048
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8
+  warmup_ratio: 0.03
+  scheduler: cosine
+  weight_decay: 0.01
+  gradient_clipping: 1.0
+  completion_only_loss: true
+  assistant_only_loss: validate_template_mask_first
+  seed: 1729
+  output_root: training/reports/runs
+promotion_gates:
+  metric_tolerance: 0.02
+  require_manual_review: true

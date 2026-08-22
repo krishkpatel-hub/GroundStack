@@ -1,0 +1,5 @@
+{
+  "version": "grounded_answer/v1",
+  "description": "Grounded technical answer prompt with untrusted source delimiters.",
+  "created_at": "2026-08-19"
+}

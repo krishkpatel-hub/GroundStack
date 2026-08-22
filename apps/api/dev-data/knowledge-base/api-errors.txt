@@ -1,0 +1,7 @@
+GroundStack API Error Notes
+
+All API errors are returned as JSON with an error object. The error object has a
+code, message, and optional details field.
+
+Validation errors use the validation_error code. Unexpected server failures use
+internal_server_error and do not include Python tracebacks in the public response.

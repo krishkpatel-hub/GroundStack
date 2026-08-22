@@ -1,0 +1,22 @@
+{
+  "dataset_version": "groundstack-seed-dev/0.1.0",
+  "sources": [
+    {
+      "source_name": "GroundStack fictional technical documentation",
+      "original_location": "training/data/seed/groundstack_seed.jsonl",
+      "license": "project_original",
+      "collection_method": "human-authored development examples",
+      "date_obtained": "2026-08-19",
+      "content_category": "fictional developer support",
+      "redistribution_allowed": true,
+      "reviewer": "GroundStack maintainer",
+      "notes": "Small development seed dataset for pipeline validation and smoke testing only."
+    }
+  ],
+  "base_model_license": {
+    "model": "meta-llama/Llama-3.2-3B-Instruct",
+    "license_reference": "https://www.llama.com/llama-downloads/",
+    "requires_license_acceptance": true,
+    "requires_hugging_face_authentication": true
+  }
+}

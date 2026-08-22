@@ -1,0 +1,10 @@
+User question:
+{{question}}
+
+Recent conversation:
+{{history}}
+
+Retrieved evidence:
+{{sources}}
+
+Write the answer now. Use citations like [S1] for claims supported by the retrieved evidence.

@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: groundstack
+          POSTGRES_PASSWORD: groundstack
+          POSTGRES_DB: groundstack
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U groundstack -d groundstack"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      # actions/setup-node v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      # actions/setup-python v5.6.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: npm ci
+      - run: npm run lint --workspace apps/web
+      - run: npm run typecheck --workspace apps/web
+      - run: npm run test --workspace apps/web
+      - run: npm run build --workspace apps/web
+      - run: python -m pip install -e "apps/api[dev]"
+      - run: cd apps/api && ruff format --check .
+      - run: cd apps/api && ruff check .
+      - run: python -m compileall -q apps/api/app
+      - run: cd apps/api && alembic upgrade head
+        env:
+          DATABASE_URL: postgresql+asyncpg://groundstack:groundstack@localhost:5432/groundstack
+      - run: cd apps/api && pytest
+        env:
+          APP_ENV: test
+          DATABASE_URL: postgresql+asyncpg://groundstack:groundstack@localhost:5432/groundstack
+      - run: cd training && PYTHONPATH=. python -m pytest
+      - run: PYTHONPATH=evaluation python -m pytest evaluation/tests
+      - run: PYTHONPATH=evaluation python evaluation/runners/run_eval.py --suite all
+      - run: python scripts/check_migrations.py
+
+  containers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      # docker/setup-buildx-action v3.11.0
+      - uses: docker/setup-buildx-action@18ce135bb5112fa8ce4ed6c17ab05699d7f3a5e0
+      - run: docker build -f apps/api/Dockerfile -t groundstack-api:ci .
+      - run: docker build -f apps/web/Dockerfile -t groundstack-web:ci .
+
+  dependency-and-secret-scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: npm audit --audit-level=high
+      - run: python -m pip install pip-audit && pip-audit --path apps/api
+      - run: |
+          ! git grep -InE '(BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|AKIA[0-9A-Z]{16}|OIDC_CLIENT_SECRET=.+)' -- ':!.env.example' ':!deploy/.env.demo.example'

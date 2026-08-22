@@ -1,0 +1,866 @@
+{
+  "created_at": "2026-08-19T01:27:59.725848+00:00",
+  "dataset": "groundstack-sample-retrieval-v1",
+  "dataset_checksum": "4117fd98e52a87f43fc5eefe2d6f89968eab9c3e581f2c7b177277f2a69385eb",
+  "algorithm_version": "hybrid-rrf-ce-v1",
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "reranker_model": "cross-encoder/ms-marco-MiniLM-L6-v2",
+  "results": [
+    {
+      "mode": "vector_only",
+      "metrics": {
+        "answerable_count": 16,
+        "unsupported_count": 4,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr_at_10": 0.46875,
+        "ndcg_at_10": 0.4769331095982161,
+        "unsupported_with_results": 4
+      },
+      "rows": [
+        {
+          "id": "q001",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q002",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q003",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q004",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q005",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q006",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q007",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q008",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q009",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 0.5,
+          "ndcg_10": 0.6309297535714575,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q010",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q011",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q012",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q013",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q014",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q015",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q016",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q017",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q018",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q019",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q020",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        }
+      ]
+    },
+    {
+      "mode": "lexical_only",
+      "metrics": {
+        "answerable_count": 16,
+        "unsupported_count": 4,
+        "recall_at_5": 0.375,
+        "recall_at_10": 0.375,
+        "mrr_at_10": 0.375,
+        "ndcg_at_10": 0.375,
+        "unsupported_with_results": 0
+      },
+      "rows": [
+        {
+          "id": "q001",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q002",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q003",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 1,
+          "degraded_mode": null
+        },
+        {
+          "id": "q004",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 1,
+          "degraded_mode": null
+        },
+        {
+          "id": "q005",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q006",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q007",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 1,
+          "degraded_mode": null
+        },
+        {
+          "id": "q008",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 1,
+          "degraded_mode": null
+        },
+        {
+          "id": "q009",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 1,
+          "degraded_mode": null
+        },
+        {
+          "id": "q010",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q011",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q012",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q013",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q014",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 1,
+          "degraded_mode": null
+        },
+        {
+          "id": "q015",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 1,
+          "degraded_mode": null
+        },
+        {
+          "id": "q016",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 1,
+          "degraded_mode": null
+        },
+        {
+          "id": "q017",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q018",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q019",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        },
+        {
+          "id": "q020",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 0,
+          "degraded_mode": null
+        }
+      ]
+    },
+    {
+      "mode": "hybrid_rrf",
+      "metrics": {
+        "answerable_count": 16,
+        "unsupported_count": 4,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr_at_10": 0.5,
+        "ndcg_at_10": 0.5,
+        "unsupported_with_results": 4
+      },
+      "rows": [
+        {
+          "id": "q001",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q002",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q003",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q004",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q005",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q006",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q007",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q008",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q009",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q010",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q011",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q012",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q013",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q014",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q015",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q016",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q017",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q018",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q019",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q020",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        }
+      ]
+    },
+    {
+      "mode": "hybrid_rerank",
+      "metrics": {
+        "answerable_count": 16,
+        "unsupported_count": 4,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "mrr_at_10": 0.5,
+        "ndcg_at_10": 0.5,
+        "unsupported_with_results": 4
+      },
+      "rows": [
+        {
+          "id": "q001",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q002",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q003",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q004",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q005",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q006",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q007",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q008",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q009",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q010",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q011",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q012",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q013",
+          "answerable": true,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q014",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q015",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q016",
+          "answerable": true,
+          "recall_5": 1.0,
+          "recall_10": 1.0,
+          "mrr_10": 1.0,
+          "ndcg_10": 1.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q017",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q018",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q019",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        },
+        {
+          "id": "q020",
+          "answerable": false,
+          "recall_5": 0.0,
+          "recall_10": 0.0,
+          "mrr_10": 0.0,
+          "ndcg_10": 0.0,
+          "result_count": 2,
+          "degraded_mode": null
+        }
+      ]
+    }
+  ]
+}

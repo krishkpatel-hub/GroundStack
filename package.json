@@ -1,0 +1,15 @@
+{
+  "name": "groundstack",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/web",
+    "lint": "npm run lint --workspace apps/web",
+    "format": "npm run format --workspace apps/web"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  email {$ACME_EMAIL:admin@example.com}
+}
+
+{$PUBLIC_HOST::80} {
+  encode zstd gzip
+
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+    X-Frame-Options DENY
+  }
+
+  handle_path /api/* {
+    reverse_proxy api:8000 {
+      flush_interval -1
+      transport http {
+        read_timeout 10m
+        write_timeout 10m
+      }
+    }
+  }
+
+  reverse_proxy web:3000
+}

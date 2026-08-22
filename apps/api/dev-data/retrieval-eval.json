@@ -1,0 +1,138 @@
+{
+  "name": "groundstack-sample-retrieval-v1",
+  "description": "Small original retrieval baseline over the local GroundStack sample knowledge base.",
+  "queries": [
+    {
+      "id": "q001",
+      "query": "How do I copy the environment file before running GroundStack?",
+      "answerable": true,
+      "expected_source": "setup.md",
+      "expected_section": "Environment"
+    },
+    {
+      "id": "q002",
+      "query": "What variable does the web console use for the API base URL?",
+      "answerable": true,
+      "expected_source": "setup.md",
+      "expected_section": "Common Checks"
+    },
+    {
+      "id": "q003",
+      "query": "NEXT_PUBLIC_API_BASE_URL",
+      "answerable": true,
+      "expected_source": "setup.md",
+      "expected_section": "Common Checks"
+    },
+    {
+      "id": "q004",
+      "query": "status: ok health endpoint",
+      "answerable": true,
+      "expected_source": "setup.md",
+      "expected_section": "Common Checks"
+    },
+    {
+      "id": "q005",
+      "query": "Why does the status indicator say the database is offline?",
+      "answerable": true,
+      "expected_source": "troubleshooting.md",
+      "expected_section": "Database Is Offline"
+    },
+    {
+      "id": "q006",
+      "query": "groundstack-postgres container health check",
+      "answerable": true,
+      "expected_source": "troubleshooting.md",
+      "expected_section": "Database Is Offline"
+    },
+    {
+      "id": "q007",
+      "query": "Migrations fail because the vector extension image is not running",
+      "answerable": true,
+      "expected_source": "troubleshooting.md",
+      "expected_section": "Migrations Fail"
+    },
+    {
+      "id": "q008",
+      "query": "What should I rerun after restarting the database container?",
+      "answerable": true,
+      "expected_source": "troubleshooting.md",
+      "expected_section": "Migrations Fail"
+    },
+    {
+      "id": "q009",
+      "query": "make ingest-sample",
+      "answerable": true,
+      "expected_source": "troubleshooting.md",
+      "expected_section": "Empty Knowledge Base"
+    },
+    {
+      "id": "q010",
+      "query": "The Knowledge Base page is blank after startup",
+      "answerable": true,
+      "expected_source": "troubleshooting.md",
+      "expected_section": "Empty Knowledge Base"
+    },
+    {
+      "id": "q011",
+      "query": "What does a GroundStack public API error body contain?",
+      "answerable": true,
+      "expected_source": "api-errors.txt",
+      "expected_section": ""
+    },
+    {
+      "id": "q012",
+      "query": "validation_error code details field",
+      "answerable": true,
+      "expected_source": "api-errors.txt",
+      "expected_section": ""
+    },
+    {
+      "id": "q013",
+      "query": "Do public internal_server_error responses include Python tracebacks?",
+      "answerable": true,
+      "expected_source": "api-errors.txt",
+      "expected_section": ""
+    },
+    {
+      "id": "q014",
+      "query": "changed source content immutable document version",
+      "answerable": true,
+      "expected_source": "setup.md",
+      "expected_section": "Common Checks"
+    },
+    {
+      "id": "q015",
+      "query": "chunk previews preserve list items",
+      "answerable": true,
+      "expected_source": "setup.md",
+      "expected_section": "Common Checks"
+    },
+    {
+      "id": "q016",
+      "query": "PostgreSQL with pgvector local setup",
+      "answerable": true,
+      "expected_source": "setup.md",
+      "expected_section": ""
+    },
+    {
+      "id": "q017",
+      "query": "How do I reset my user password?",
+      "answerable": false
+    },
+    {
+      "id": "q018",
+      "query": "Stripe webhook signature verification",
+      "answerable": false
+    },
+    {
+      "id": "q019",
+      "query": "Where are Kubernetes Helm chart values configured?",
+      "answerable": false
+    },
+    {
+      "id": "q020",
+      "query": "OAuth callback URL for GitHub login",
+      "answerable": false
+    }
+  ]
+}

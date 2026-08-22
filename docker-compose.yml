@@ -16,6 +16,20 @@ services:
       timeout: 5s
       retries: 12
 
+  redis:
+    image: redis:8.2.1-alpine
+    container_name: groundstack-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
   prometheus:
     image: prom/prometheus:v3.4.2
     profiles: ["observability"]
@@ -34,3 +48,4 @@ services:
 
 volumes:
   postgres-data:
+  redis-data:

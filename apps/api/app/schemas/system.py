@@ -6,6 +6,18 @@ class HealthResponse(BaseModel):
     service: str
 
 
+class ReadinessResponse(BaseModel):
+    status: str
+    checks: dict[str, str]
+
+
+class DemoAvailabilityResponse(BaseModel):
+    state: str
+    chat_enabled: bool
+    reason: str
+    retry_after_seconds: int | None = None
+
+
 class DatabaseStatus(BaseModel):
     connected: bool
     detail: str

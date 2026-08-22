@@ -213,6 +213,32 @@ Deterministic Prompt 9 screenshots are stored in `docs/assets/screenshots/`:
 
 See `docs/CASE_STUDY.md` for a concise engineering case study.
 
+## Public Demo Launch Preparation
+
+GroundStack is prepared for a safe public demo architecture using Vercel for the
+Next.js frontend, Render for the FastAPI API, Neon Postgres with pgvector, Upstash
+Redis, and a user-supplied OpenAI-compatible hosted LLaMA endpoint. The repository
+does not provision paid resources or store secrets.
+
+Launch-readiness docs:
+
+- Environment registry: `docs/deployment/ENVIRONMENT_VARIABLES.md`
+- Platform setup: `docs/deployment/PLATFORM_SETUP.md`
+- Launch runbook: `docs/deployment/LAUNCH_RUNBOOK.md`
+- Demo corpus manifest: `docs/demo-corpus/MANIFEST.json`
+- Claims evidence: `docs/claims/CLAIMS.md`
+- Portfolio package: `docs/portfolio/`
+
+Useful launch-prep commands:
+
+```bash
+make deploy-check
+make migrate-production
+make seed-demo
+make verify-demo-data
+make db-smoke
+```
+
 ## Fine-Tuning Pipeline
 
 `training/` contains an isolated dataset-engineering and QLoRA adapter-training

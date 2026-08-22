@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     database_url: PostgresDsn = Field(
         default="postgresql+asyncpg://groundstack:groundstack@localhost:5432/groundstack"
     )
+    database_direct_url: str = ""
+    db_ssl_required: bool = False
+    db_pool_size: int = Field(default=5, ge=1, le=20)
+    redis_url: str = ""
+    redis_timeout_seconds: float = Field(default=1.5, gt=0, le=10)
+    redis_key_namespace: str = "groundstack"
     cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     public_api_base_url: str = "http://localhost:8000"
     embedding_provider: str = "sentence_transformers"
@@ -46,6 +52,7 @@ class Settings(BaseSettings):
     llm_model: str = "llama3.2:3b"
     llm_base_url: str = "http://localhost:11434"
     llm_api_key: str = ""
+    llm_timeout_seconds: float | None = Field(default=None, gt=0)
     llm_temperature: float = Field(default=0.1, ge=0.0, le=2.0)
     llm_top_p: float = Field(default=0.9, ge=0.0, le=1.0)
     llm_max_output_tokens: int = Field(default=700, ge=1, le=4096)
@@ -53,6 +60,7 @@ class Settings(BaseSettings):
     llm_request_timeout_seconds: float = Field(default=120.0, gt=0)
     llm_prewarm: bool = False
     llm_max_retries: int = Field(default=1, ge=0, le=3)
+    llm_max_concurrent_requests: int | None = Field(default=None, ge=1, le=32)
     llm_model_variant: str = "base"
     llm_adapter_name: str = ""
     llm_adapter_version: str = ""
@@ -88,8 +96,17 @@ class Settings(BaseSettings):
     session_cookie_samesite: str = "lax"
     session_lifetime_seconds: int = Field(default=3600, ge=300, le=86400)
     allow_anonymous_demo: bool = False
+    demo_chat_enabled: bool = True
+    demo_allowlist_mode: bool = False
+    demo_allowlist_ips: list[str] = []
     demo_request_limit_per_minute: int = Field(default=8, ge=1, le=60)
+    demo_daily_question_limit: int = Field(default=100, ge=1, le=10000)
     demo_daily_token_limit: int = Field(default=15000, ge=1000, le=100000)
+    demo_max_question_length: int = Field(default=600, ge=20, le=2000)
+    demo_max_context_tokens: int = Field(default=2500, ge=500, le=12000)
+    demo_provider_failure_threshold: int = Field(default=5, ge=1, le=100)
+    demo_provider_failure_window_seconds: int = Field(default=300, ge=30, le=3600)
+    demo_redis_required: bool = False
     demo_upload_limit_bytes: int = Field(default=0, ge=0)
     demo_max_conversations: int = Field(default=5, ge=1, le=50)
     dev_auth_bypass_enabled: bool = True
@@ -119,7 +136,11 @@ class Settings(BaseSettings):
         return [domain.lower() for domain in value]
 
     @field_validator(
-        "trusted_hosts", "trusted_proxy_hosts", "oidc_allowed_algorithms", mode="before"
+        "trusted_hosts",
+        "trusted_proxy_hosts",
+        "oidc_allowed_algorithms",
+        "demo_allowlist_ips",
+        mode="before",
     )
     @classmethod
     def parse_string_lists(cls, value: str | list[str]) -> list[str]:
@@ -163,11 +184,29 @@ class Settings(BaseSettings):
             and self.demo_upload_limit_bytes != 0
         ):
             raise ValueError("Anonymous demo upload limit must remain 0; uploads are admin-only.")
+        if self.app_env == "demo" and self.dev_auth_bypass_enabled:
+            raise ValueError("DEV_AUTH_BYPASS_ENABLED cannot be true in demo.")
+        if self.app_env == "demo" and self.docs_enabled:
+            raise ValueError("DOCS_ENABLED must be false in public demo mode.")
+        if self.app_env == "demo" and self.llm_provider == "openai_compatible":
+            if not self.llm_base_url or not self.llm_api_key or not self.llm_model:
+                raise ValueError(
+                    "Demo OpenAI-compatible inference requires LLM_BASE_URL, "
+                    "LLM_API_KEY, and LLM_MODEL."
+                )
         if self.app_env == "test" and self.llm_provider not in {"fake", "ollama"}:
             raise ValueError(
                 "Test mode cannot use remote model providers unless explicitly overridden."
             )
         return self
+
+    @property
+    def effective_llm_timeout_seconds(self) -> float:
+        return self.llm_timeout_seconds or self.llm_request_timeout_seconds
+
+    @property
+    def effective_generation_concurrency(self) -> int:
+        return self.llm_max_concurrent_requests or self.generation_concurrency
 
 
 @lru_cache

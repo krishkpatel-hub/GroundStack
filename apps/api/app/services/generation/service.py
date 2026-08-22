@@ -305,6 +305,7 @@ class GroundedAnswerService:
                     conversation_id=str(conversation_id),
                     message_id=str(message.id),
                     grounding_status="generation_failed",
+                    category=provider_event.error_category,
                     message=provider_event.error_message or "Generation failed.",
                 )
                 return

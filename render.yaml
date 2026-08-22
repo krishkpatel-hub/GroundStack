@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: groundstack-api
+    runtime: docker
+    plan: free
+    repo: https://github.com/krishkpatel-hub/GroundStack
+    branch: launch/public-demo
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health/live
+    autoDeploy: false
+    envVars:
+      - key: APP_ENV
+        value: demo
+      - key: DEV_AUTH_BYPASS_ENABLED
+        value: "false"
+      - key: DOCS_ENABLED
+        value: "false"
+      - key: ALLOW_ANONYMOUS_DEMO
+        value: "true"
+      - key: DEMO_CHAT_ENABLED
+        value: "false"
+      - key: DEMO_REDIS_REQUIRED
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_DIRECT_URL
+        sync: false
+      - key: DB_SSL_REQUIRED
+        value: "true"
+      - key: REDIS_URL
+        sync: false
+      - key: LLM_PROVIDER
+        value: openai_compatible
+      - key: LLM_BASE_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: METRICS_INTERNAL_TOKEN
+        sync: false

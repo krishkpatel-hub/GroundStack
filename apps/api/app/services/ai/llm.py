@@ -27,7 +27,7 @@ class OllamaProvider(LLMProvider):
         settings = get_settings()
         self.base_url = (base_url or settings.llm_base_url).rstrip("/")
         self.model = model or settings.llm_model
-        self.timeout = settings.llm_request_timeout_seconds
+        self.timeout = settings.effective_llm_timeout_seconds
 
     async def health(self) -> LLMHealth:
         try:
@@ -166,7 +166,7 @@ class OpenAICompatibleProvider(LLMProvider):
         self.base_url = (base_url or settings.llm_base_url).rstrip("/")
         self.model = model or settings.llm_model
         self.api_key = settings.llm_api_key
-        self.timeout = settings.llm_request_timeout_seconds
+        self.timeout = settings.effective_llm_timeout_seconds
 
     def _headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}

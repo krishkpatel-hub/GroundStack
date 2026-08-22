@@ -8,6 +8,11 @@ from app.core.settings import get_settings
 from app.schemas.conversation import ChatRequest, ChatResponse
 from app.services.ai.types import RetrievalFilters
 from app.services.generation.service import GroundedAnswerService
+from app.services.operations.demo_limits import (
+    distributed_generation_slot,
+    enforce_demo_chat,
+    record_provider_failure,
+)
 from app.services.operations.metrics import metrics
 from app.services.operations.rate_limit import BackpressureError, gate, limiter
 
@@ -52,14 +57,18 @@ async def chat(
     http_request: Request,
     principal: ChatPrincipal,
 ) -> ChatResponse:
+    await enforce_demo_chat(http_request, principal, request.question)
     await _enforce_chat_limit(http_request, principal)
     settings = get_settings()
     try:
-        async with gate(
-            "generation",
-            max_concurrency=settings.generation_concurrency,
-            timeout_seconds=settings.model_queue_timeout_seconds,
-        ).acquire():
+        async with (
+            distributed_generation_slot(),
+            gate(
+                "generation",
+                max_concurrency=settings.effective_generation_concurrency,
+                timeout_seconds=settings.model_queue_timeout_seconds,
+            ).acquire(),
+        ):
             result = await GroundedAnswerService().answer(
                 question=request.question,
                 conversation_id=request.conversation_id,
@@ -87,17 +96,21 @@ async def chat_stream(
     http_request: Request,
     principal: ChatPrincipal,
 ) -> StreamingResponse:
+    await enforce_demo_chat(http_request, principal, request.question)
     await _enforce_chat_limit(http_request, principal)
     settings = get_settings()
     service = GroundedAnswerService()
 
     async def events():
         try:
-            async with gate(
-                "generation",
-                max_concurrency=settings.generation_concurrency,
-                timeout_seconds=settings.model_queue_timeout_seconds,
-            ).acquire():
+            async with (
+                distributed_generation_slot(),
+                gate(
+                    "generation",
+                    max_concurrency=settings.effective_generation_concurrency,
+                    timeout_seconds=settings.model_queue_timeout_seconds,
+                ).acquire(),
+            ):
                 async for event in service.stream_answer(
                     question=request.question,
                     conversation_id=request.conversation_id,
@@ -105,6 +118,8 @@ async def chat_stream(
                     filters=_filters(request),
                     owner_subject=principal.subject,
                 ):
+                    if event.event == "error":
+                        await record_provider_failure(str(event.data.get("category", "")))
                     yield f"event: {event.event}\n"
                     yield f"data: {json.dumps(event.data)}\n\n"
         except BackpressureError as exc:

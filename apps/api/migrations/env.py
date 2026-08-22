@@ -42,7 +42,8 @@ _models = (
 
 
 def get_url() -> str:
-    return str(get_settings().database_url)
+    settings = get_settings()
+    return settings.database_direct_url or str(settings.database_url)
 
 
 def run_migrations_offline() -> None:

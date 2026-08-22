@@ -6,10 +6,12 @@ from app.core.settings import get_settings
 from app.db.health import check_database
 from app.db.session import async_session_factory
 from app.schemas.system import (
+    DemoAvailabilityResponse,
     EmbeddingStatus,
     HealthResponse,
     KnowledgeCounts,
     LLMStatus,
+    ReadinessResponse,
     RerankerStatus,
     RetrievalStatus,
     SystemStatusResponse,
@@ -17,6 +19,7 @@ from app.schemas.system import (
 from app.services.ai.embeddings import detect_device
 from app.services.ai.llm import get_llm_provider
 from app.services.ingestion.persistence import KnowledgeRepository
+from app.services.operations.demo_limits import demo_availability, redis_connectivity_ok
 from app.services.retrieval.repository import RetrievalRepository
 
 router = APIRouter(tags=["system"])
@@ -25,6 +28,40 @@ router = APIRouter(tags=["system"])
 @router.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     return HealthResponse(status="ok", service=get_settings().app_name)
+
+
+@router.get("/health/live", response_model=HealthResponse)
+async def live() -> HealthResponse:
+    return HealthResponse(status="ok", service=get_settings().app_name)
+
+
+@router.get("/health/ready", response_model=ReadinessResponse)
+async def ready() -> ReadinessResponse:
+    settings = get_settings()
+    checks: dict[str, str] = {}
+    database = await check_database()
+    checks["database"] = "ok" if database.connected else "unavailable"
+    if settings.demo_redis_required or settings.redis_url:
+        checks["redis"] = "ok" if await redis_connectivity_ok() else "unavailable"
+    if settings.app_env == "demo":
+        try:
+            llm = await asyncio.wait_for(get_llm_provider().health(), timeout=1.5)
+            checks["inference"] = "ok" if llm.reachable and llm.model_available else "unavailable"
+        except Exception:
+            checks["inference"] = "unavailable"
+    status = "ok" if all(value == "ok" for value in checks.values()) else "degraded"
+    return ReadinessResponse(status=status, checks=checks)
+
+
+@router.get("/demo/availability", response_model=DemoAvailabilityResponse)
+async def public_demo_availability() -> DemoAvailabilityResponse:
+    availability = await demo_availability()
+    return DemoAvailabilityResponse(
+        state=availability.state,
+        chat_enabled=availability.chat_enabled,
+        reason=availability.reason,
+        retry_after_seconds=availability.retry_after_seconds,
+    )
 
 
 @router.get("/system/status", response_model=SystemStatusResponse)

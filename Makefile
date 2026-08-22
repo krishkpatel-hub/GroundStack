@@ -1,4 +1,4 @@
-.PHONY: setup dev test lint format typecheck db-up db-down migrate migration-check predeploy seed-demo api-dev web-dev eval-retrieval benchmark-retrieval validate-training-data prepare-training-data training-preflight train-qlora compare-models training-test review-training-candidates export-approved-training-data eval eval-generation eval-security compare-prompts load-smoke-fake load-sustained-fake load-300-real
+.PHONY: setup dev test lint format typecheck db-up db-down migrate migration-check predeploy deploy-check migrate-production seed-demo verify-demo-data db-smoke api-dev web-dev eval-retrieval benchmark-retrieval validate-training-data prepare-training-data training-preflight train-qlora compare-models training-test review-training-candidates export-approved-training-data eval eval-generation eval-security compare-prompts load-smoke-fake load-sustained-fake load-300-real
 
 setup:
 	npm install
@@ -46,8 +46,20 @@ migration-check:
 predeploy:
 	cd apps/api && . .venv/bin/activate && cd ../.. && python scripts/predeploy.py
 
+deploy-check:
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/deploy_check.py
+
+migrate-production:
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/migrate_production.py
+
 seed-demo:
 	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/seed_demo.py
+
+verify-demo-data:
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/verify_demo_data.py
+
+db-smoke:
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/db_smoke.py
 
 ingest:
 	cd apps/api && . .venv/bin/activate && python -m app.cli.ingest "$(FILE)"

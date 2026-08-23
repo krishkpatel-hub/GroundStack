@@ -45,6 +45,10 @@ internal metrics token. Anonymous demo users cannot mutate knowledge, run evalua
 training, or change settings. Feedback can create training candidates, but those candidates require
 human review before export.
 
+The Discord adapter uses signed slash-command interactions rather than message scanning. It encrypts
+temporary interaction tokens, suppresses mentions in generated output, uses keyed HMAC user
+identifiers, disables DMs by default, and marks Discord records as ineligible for training data.
+
 ## Evaluation Approach
 
 The repository includes deterministic regression datasets, evaluation runners, persisted evaluation
@@ -64,12 +68,16 @@ with managed PostgreSQL, managed Redis, external inference, and a managed TLS/lo
 - Demo seeding uses deterministic synthetic/project-authored content rather than fake production
   activity.
 - The backend remains the authority for authorization; role-aware navigation is a usability layer.
+- The Discord milestone implements local code, mocks, documentation, and admin controls; it does not
+  claim a production bot installation or public community usage.
 
 ## Measured
 
 - Backend tests, frontend unit tests, production builds, deterministic evaluation runs, Compose
   rendering, predeploy checks, and production Docker builds were executed during Milestones 8 and 9.
 - Prompt 9 adds repeatable Playwright journeys, axe scans, and a frontend static asset budget check.
+- Milestone 11 adds Discord-specific unit tests for signature verification, command parsing,
+  answer rendering, mention suppression, and training-data exclusion.
 
 ## Future Work
 

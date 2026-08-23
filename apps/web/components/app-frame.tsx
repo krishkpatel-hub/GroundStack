@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bot,
   BookOpenText,
   ChartNoAxesCombined,
   ChevronLeft,
@@ -44,6 +45,7 @@ const adminItems = [
   { href: "/activity", label: "Ingestion activity", icon: ShieldCheck },
   { href: "/evaluation", label: "Evaluation", icon: ChartNoAxesCombined },
   { href: "/training", label: "Training review", icon: FileText },
+  { href: "/discord", label: "Discord integration", icon: Bot },
   { href: "/settings", label: "System settings", icon: Settings },
 ];
 

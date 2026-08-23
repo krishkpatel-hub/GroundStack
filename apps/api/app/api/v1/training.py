@@ -21,7 +21,12 @@ async def list_training_candidates(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[TrainingCandidateResponse]:
     async with async_session_factory() as session:
-        query = select(TrainingCandidate).order_by(desc(TrainingCandidate.created_at))
+        query = (
+            select(TrainingCandidate)
+            .where(TrainingCandidate.training_eligible.is_(True))
+            .where(TrainingCandidate.source_platform != "discord")
+            .order_by(desc(TrainingCandidate.created_at))
+        )
         if status_filter:
             query = query.where(TrainingCandidate.status == status_filter)
         rows = await session.execute(query.limit(limit).offset(offset))
@@ -53,6 +58,8 @@ async def update_training_candidate(
             if value is not None:
                 setattr(candidate, field, value)
         if request.status is not None:
+            if candidate.source_platform == "discord" or not candidate.training_eligible:
+                raise HTTPException(status_code=409, detail="Discord data is not trainable.")
             if request.status == "approved" and (
                 candidate.redaction_status != "approved"
                 or candidate.provenance_status != "approved"

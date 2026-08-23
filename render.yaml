@@ -40,3 +40,67 @@ services:
         sync: false
       - key: METRICS_INTERNAL_TOKEN
         sync: false
+      - key: DISCORD_INTEGRATION_ENABLED
+        value: "false"
+      - key: DISCORD_APPLICATION_ID
+        sync: false
+      - key: DISCORD_PUBLIC_KEY
+        sync: false
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_INTERACTION_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: DISCORD_IDENTITY_HMAC_KEY
+        sync: false
+      - key: DISCORD_ALLOW_DMS
+        value: "false"
+      - key: DISCORD_DEFAULT_RETENTION_DAYS
+        value: "30"
+
+  - type: worker
+    name: groundstack-discord-worker
+    runtime: docker
+    plan: free
+    repo: https://github.com/krishkpatel-hub/GroundStack
+    branch: feature/discord-integration
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    autoDeploy: false
+    dockerCommand: python -m app.cli.discord_worker
+    envVars:
+      - key: APP_ENV
+        value: demo
+      - key: DOCS_ENABLED
+        value: "false"
+      - key: DEV_AUTH_BYPASS_ENABLED
+        value: "false"
+      - key: DEMO_REDIS_REQUIRED
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_DIRECT_URL
+        sync: false
+      - key: DB_SSL_REQUIRED
+        value: "true"
+      - key: REDIS_URL
+        sync: false
+      - key: LLM_PROVIDER
+        value: openai_compatible
+      - key: LLM_BASE_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: DISCORD_INTEGRATION_ENABLED
+        value: "false"
+      - key: DISCORD_APPLICATION_ID
+        sync: false
+      - key: DISCORD_PUBLIC_KEY
+        sync: false
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_INTERACTION_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: DISCORD_IDENTITY_HMAC_KEY
+        sync: false

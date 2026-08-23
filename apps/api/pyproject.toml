@@ -8,6 +8,7 @@ dependencies = [
   "authlib>=1.6.5",
   "asyncpg>=0.30.0",
   "beautifulsoup4>=4.13.4",
+  "cryptography>=45.0.0",
   "fastapi>=0.116.1",
   "httpx>=0.28.1",
   "markdown-it-py>=4.0.0",

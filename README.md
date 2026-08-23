@@ -2,8 +2,8 @@
 
 GroundStack is a portfolio-grade AI technical-support platform foundation for developer
 communities. It includes a working knowledge-ingestion pipeline, hybrid retrieval with
-structured citations, and grounded answer generation over a local-first LLaMA-family
-provider.
+structured citations, grounded answer generation over a local-first LLaMA-family
+provider, and a Discord slash-command adapter for explicit community questions.
 
 Milestone 8 adds explicit runtime modes, provider-neutral OIDC authentication,
 backend ownership checks for conversations and feedback, production Dockerfiles,
@@ -170,6 +170,24 @@ is found, GroundStack returns a deterministic insufficient-evidence answer witho
 calling the LLM.
 
 See [docs/generation.md](docs/generation.md) and [docs/security.md](docs/security.md).
+
+## Discord Community Assistant
+
+GroundStack can expose the same grounded answer pipeline through Discord application
+commands. It processes only explicit slash-command questions, avoids the Message
+Content intent, disables DMs by default, encrypts temporary interaction tokens, and
+marks Discord records as ineligible for training data.
+
+Local inspection commands:
+
+```bash
+make discord-commands-json
+make discord-worker-health
+```
+
+See [docs/discord.md](docs/discord.md) for sandbox setup, minimal permissions,
+privacy, deletion, and deployment notes. The repository does not create or install a
+Discord bot without explicit approval.
 
 ## Deployment
 

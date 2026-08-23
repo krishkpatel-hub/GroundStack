@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from urllib.parse import urlparse
 
-
 REQUIRED_DEMO_VARS = [
     "APP_ENV",
     "DATABASE_URL",

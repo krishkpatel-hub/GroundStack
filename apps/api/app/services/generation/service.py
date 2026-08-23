@@ -11,6 +11,7 @@ from app.services.generation.citations import validate_answer_citations
 from app.services.generation.context import ApproximateTokenCounter, build_context
 from app.services.generation.persistence import ConversationRepository
 from app.services.generation.prompts import load_prompt_template, render_user_prompt
+from app.services.operations.metrics import metrics
 from app.services.retrieval.service import HybridRetriever
 
 
@@ -95,6 +96,7 @@ class GroundedAnswerService:
         yield event("retrieval_started", conversation_id=str(conversation_id))
 
         try:
+            retrieval_start = perf_counter()
             retrieval = await self.retriever.retrieve(
                 RetrievalQuery(
                     text=question,
@@ -103,7 +105,14 @@ class GroundedAnswerService:
                     include_debug=True,
                 )
             )
+            metrics.observe(
+                "groundstack_retrieval_latency_seconds",
+                perf_counter() - retrieval_start,
+                operation="chat_retrieval",
+                result="completed",
+            )
         except Exception as exc:
+            metrics.increment("groundstack_chat_requests_total", result="retrieval_failed")
             async with async_session_factory() as session:
                 repo = ConversationRepository(session)
                 conversation = await repo.get_or_create_conversation(
@@ -140,6 +149,7 @@ class GroundedAnswerService:
         )
 
         if not retrieval.evidence_found:
+            metrics.increment("groundstack_chat_requests_total", result="insufficient_evidence")
             answer = (
                 "I do not have enough retrieved evidence to answer this question. "
                 "Add or select relevant documentation in the Knowledge Base, then search again."
@@ -245,6 +255,7 @@ class GroundedAnswerService:
             request_id=request_id,
         )
         generation_start = perf_counter()
+        metrics.increment("groundstack_generation_admissions_total", result="started")
         first_token_latency_ms: float | None = None
         answer_parts: list[str] = []
         input_tokens: int | None = None
@@ -254,6 +265,12 @@ class GroundedAnswerService:
             if provider_event.type == "token" and provider_event.token:
                 if first_token_latency_ms is None:
                     first_token_latency_ms = _ms(generation_start)
+                    metrics.observe(
+                        "groundstack_time_to_first_token_seconds",
+                        first_token_latency_ms / 1000,
+                        operation="chat_generation",
+                        result="first_token",
+                    )
                 answer_parts.append(provider_event.token)
                 yield event("token", token=provider_event.token)
             elif provider_event.type == "usage":
@@ -261,6 +278,10 @@ class GroundedAnswerService:
                 output_tokens = provider_event.output_tokens
                 yield event("usage", input_tokens=input_tokens, output_tokens=output_tokens)
             elif provider_event.type == "error":
+                metrics.increment(
+                    "groundstack_provider_failures_total",
+                    category=provider_event.error_category or "unknown",
+                )
                 async with async_session_factory() as session:
                     repo = ConversationRepository(session)
                     conversation = await repo.get_or_create_conversation(
@@ -348,6 +369,16 @@ class GroundedAnswerService:
 
         grounding_status = (
             validation.grounding_status if validation.valid else "citation_validation_failed"
+        )
+        metrics.observe(
+            "groundstack_generation_latency_seconds",
+            perf_counter() - generation_start,
+            operation="chat_generation",
+            result="completed" if validation.valid else "citation_validation_failed",
+        )
+        metrics.increment(
+            "groundstack_chat_requests_total",
+            result="grounded" if validation.valid else "citation_validation_failed",
         )
         status = "completed" if validation.valid else "failed"
         used = [

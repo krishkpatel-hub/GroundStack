@@ -1,0 +1,5 @@
+{"id":"smoke-1","kind":"supported","question":"How does GroundStack validate citations before showing an answer?"}
+{"id":"smoke-2","kind":"supported","question":"What does the ingestion pipeline store for each document chunk?"}
+{"id":"smoke-3","kind":"unsupported","question":"What is the private roadmap item that is not in the GroundStack docs?"}
+{"id":"smoke-4","kind":"multi_source","question":"How do retrieval and generation work together in GroundStack?"}
+{"id":"smoke-5","kind":"discord","question":"How does GroundStack avoid reading normal Discord messages?"}

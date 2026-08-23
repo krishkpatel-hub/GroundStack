@@ -1,0 +1,15 @@
+{"id":"mix-001","kind":"supported","question":"Explain GroundStack's hybrid retrieval path."}
+{"id":"mix-002","kind":"supported","question":"What production safeguards are required before public demo mode?"}
+{"id":"mix-003","kind":"supported","question":"How are URL ingestion requests restricted?"}
+{"id":"mix-004","kind":"supported","question":"What data can become a training candidate?"}
+{"id":"mix-005","kind":"supported","question":"How does Discord slash-command data stay out of training?"}
+{"id":"mix-006","kind":"multi_source","question":"Compare citation validation with prompt-injection protections."}
+{"id":"mix-007","kind":"multi_source","question":"How do demo rate limits and generation backpressure protect cost?"}
+{"id":"mix-008","kind":"multi_source","question":"What should be checked before applying production migrations?"}
+{"id":"mix-009","kind":"unsupported","question":"Which real customer deployed GroundStack last quarter?"}
+{"id":"mix-010","kind":"unsupported","question":"What is the production uptime for the public Discord bot?"}
+{"id":"mix-011","kind":"discord","question":"What minimal Discord permissions does GroundStack request?"}
+{"id":"mix-012","kind":"discord","question":"How does /delete-my-data work for Discord users?"}
+{"id":"mix-013","kind":"feedback","question":"How is feedback reviewed before fine-tuning export?"}
+{"id":"mix-014","kind":"retrieval","question":"What retrieval diagnostics should be persisted?"}
+{"id":"mix-015","kind":"failure","question":"How should GroundStack behave if no evidence is retrieved?"}

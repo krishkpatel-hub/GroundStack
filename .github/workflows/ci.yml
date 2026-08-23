@@ -61,6 +61,12 @@ jobs:
         env:
           APP_ENV: test
           DATABASE_URL: postgresql+asyncpg://groundstack:groundstack@localhost:5432/groundstack
+      - run: PYTHONPATH=. GROUNDSTACK_LOAD_MAX_REQUESTS=1 python -c "import load.locustfile"
+      - run: PYTHONPATH=. python -m pytest tests/load
+      - run: PYTHONPATH=. python -m load.run_locust_profile --profile smoke --dry-run
+      - run: python scripts/capacity_report.py --validate-only
+      - run: python scripts/failure_test.py --validate-only
+      - run: python scripts/integrity_check.py --validate-only
       - run: cd training && PYTHONPATH=. python -m pytest
       - run: PYTHONPATH=evaluation python -m pytest evaluation/tests
       - run: PYTHONPATH=evaluation python evaluation/runners/run_eval.py --suite all

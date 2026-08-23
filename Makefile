@@ -1,4 +1,4 @@
-.PHONY: setup dev test lint format typecheck db-up db-down migrate migration-check predeploy deploy-check migrate-production seed-demo verify-demo-data db-smoke discord-worker-health discord-worker-once discord-commands-json api-dev web-dev eval-retrieval benchmark-retrieval validate-training-data prepare-training-data training-preflight train-qlora compare-models training-test review-training-candidates export-approved-training-data eval eval-generation eval-security compare-prompts load-smoke-fake load-sustained-fake load-300-real
+.PHONY: setup dev test lint format typecheck db-up db-down migrate migration-check predeploy deploy-check migrate-production seed-demo verify-demo-data db-smoke discord-worker-health discord-worker-once discord-commands-json api-dev web-dev eval-retrieval benchmark-retrieval benchmark-import-check benchmark-smoke benchmark-volume-300 benchmark-burst benchmark-soak-short benchmark-ollama benchmark-real-provider failure-test integrity-check capacity-report capacity-cost validate-training-data prepare-training-data training-preflight train-qlora compare-models training-test review-training-candidates export-approved-training-data eval eval-generation eval-security compare-prompts load-smoke-fake load-sustained-fake load-300-real
 
 setup:
 	npm install
@@ -82,6 +82,39 @@ eval-retrieval:
 benchmark-retrieval:
 	cd apps/api && . .venv/bin/activate && python -m app.cli.benchmark_retrieval
 
+benchmark-import-check:
+	PYTHONPATH=. GROUNDSTACK_LOAD_MAX_REQUESTS=1 python3 -c "import load.locustfile"
+
+benchmark-smoke:
+	PYTHONPATH=. python3 -m load.run_locust_profile --profile smoke --dry-run
+
+benchmark-volume-300:
+	PYTHONPATH=. python3 -m load.run_locust_profile --profile volume-300 --confirm
+
+benchmark-burst:
+	PYTHONPATH=. python3 -m load.run_locust_profile --profile burst --confirm
+
+benchmark-soak-short:
+	PYTHONPATH=. python3 -m load.run_locust_profile --profile soak-short --confirm
+
+benchmark-ollama:
+	PYTHONPATH=. python3 -m load.run_locust_profile --profile ollama --confirm
+
+benchmark-real-provider:
+	PYTHONPATH=. python3 -m load.run_locust_profile --profile real-provider --confirm --confirm-real-provider
+
+failure-test:
+	python3 scripts/failure_test.py --validate-only
+
+integrity-check:
+	python3 scripts/integrity_check.py --validate-only
+
+capacity-report:
+	python3 scripts/capacity_report.py --validate-only
+
+capacity-cost:
+	python3 scripts/cost_model.py --input docs/benchmarks/cost_inputs.example.json
+
 validate-training-data:
 	PYTHONPATH=training python3 training/scripts/validate_dataset.py
 
@@ -119,10 +152,10 @@ compare-prompts:
 	PYTHONPATH=evaluation python3 evaluation/runners/compare_prompts.py
 
 load-smoke-fake:
-	cd apps/api && . .venv/bin/activate && cd ../.. && python -m load.run_locust_profile --profile fake-smoke
+	PYTHONPATH=. python3 -m load.run_locust_profile --profile smoke --dry-run
 
 load-sustained-fake:
-	cd apps/api && . .venv/bin/activate && cd ../.. && python -m load.run_locust_profile --profile fake-sustained
+	PYTHONPATH=. python3 -m load.run_locust_profile --profile soak-short --confirm
 
 load-300-real:
-	cd apps/api && . .venv/bin/activate && cd ../.. && python -m load.run_locust_profile --profile real-300 --require-real
+	PYTHONPATH=. python3 -m load.run_locust_profile --profile real-provider --confirm --confirm-real-provider

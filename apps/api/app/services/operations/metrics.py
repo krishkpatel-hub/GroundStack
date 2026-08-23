@@ -5,7 +5,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-ALLOWED_LABELS = {"method", "route", "status", "operation", "result", "suite"}
+ALLOWED_LABELS = {"category", "method", "operation", "result", "route", "status", "suite"}
 
 
 def _labels(labels: dict[str, str]) -> tuple[tuple[str, str], ...]:
@@ -23,12 +23,16 @@ class MetricsRegistry:
         self.histograms: defaultdict[tuple[str, tuple[tuple[str, str], ...]], list[float]] = (
             defaultdict(list)
         )
+        self.gauges: dict[tuple[str, tuple[tuple[str, str], ...]], float] = {}
 
     def increment(self, name: str, value: float = 1.0, **labels: str) -> None:
         self.counters[(name, _labels(labels))] += value
 
     def observe(self, name: str, value: float, **labels: str) -> None:
         self.histograms[(name, _labels(labels))].append(value)
+
+    def set_gauge(self, name: str, value: float, **labels: str) -> None:
+        self.gauges[(name, _labels(labels))] = value
 
     @contextmanager
     def timer(self, name: str, **labels: str) -> Iterator[None]:
@@ -50,6 +54,8 @@ class MetricsRegistry:
             lines.append(f"{name}_count{_format_labels(labels)} {count}")
             lines.append(f"{name}_sum{_format_labels(labels)} {total:.6f}")
             lines.append(f"{name}_max{_format_labels(labels)} {max(values):.6f}")
+        for (name, labels), value in sorted(self.gauges.items()):
+            lines.append(f"{name}{_format_labels(labels)} {value:g}")
         return "\n".join(lines) + "\n"
 
 

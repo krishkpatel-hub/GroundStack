@@ -24,6 +24,10 @@ Values below are placeholders. Do not commit real secrets.
 | `LLM_TIMEOUT_SECONDS` | API | hosted generation | no | `60` | Provider request timeout | positive seconds | n/a | yes |
 | `LLM_MAX_OUTPUT_TOKENS` | API | generation | no | `500` | Maximum completion length | 1-4096 | n/a | yes |
 | `LLM_MAX_CONCURRENT_REQUESTS` | API | public demo | no | `2` | Generation concurrency cap | 1-32 | n/a | yes |
+| `FAKE_LLM_FIRST_TOKEN_DELAY_MS` | API | benchmark/test | no | `25` | Deterministic fake provider first-token delay | 0-10000 ms | n/a | yes |
+| `FAKE_LLM_TOKEN_RATE_PER_SECOND` | API | benchmark/test | no | `80` | Deterministic fake provider token cadence | positive number | n/a | yes |
+| `FAKE_LLM_TOTAL_TOKENS` | API | benchmark/test | no | `80` | Deterministic fake provider completion size | 1-4096 | n/a | yes |
+| `FAKE_LLM_FAILURE_MODE` | API | benchmark/test | no | `none` | Inject fake timeout, 429, 500, connection, malformed, or stream interruption behavior | documented modes only | n/a | yes |
 | `CORS_ORIGINS` | API | all | no | `["https://app.example"]` | Approved frontend origins | exact origins only, no wildcard | n/a | yes |
 | `TRUSTED_HOSTS` | API | all | no | `["api.example.com"]` | Host header allowlist | exact hosts only | n/a | yes |
 | `DOCS_ENABLED` | API | dev only | no | `false` | API docs exposure | false in demo/prod | n/a | yes |

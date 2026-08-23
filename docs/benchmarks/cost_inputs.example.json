@@ -1,0 +1,25 @@
+{
+  "pricing": {
+    "provider": "user_supplied",
+    "model": "example-model",
+    "effective_date": "2026-08-23",
+    "source_url": "https://example.com/pricing",
+    "currency": "USD",
+    "input_per_million_tokens": 0.0,
+    "output_per_million_tokens": 0.0,
+    "embedding_per_million_tokens": 0.0
+  },
+  "usage": {
+    "questions_per_day": 100,
+    "average_prompt_tokens": 2500,
+    "average_completion_tokens": 500,
+    "embedding_tokens_per_day": 10000,
+    "cache_hit_rate": 0.0,
+    "database_monthly": 0.0,
+    "redis_monthly": 0.0,
+    "backend_monthly": 0.0,
+    "worker_monthly": 0.0,
+    "storage_monthly": 0.0,
+    "transfer_monthly": 0.0
+  }
+}

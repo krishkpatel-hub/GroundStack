@@ -1,0 +1,55 @@
+{
+  "configuration": {
+    "concurrency": 1,
+    "corpus_version": "local",
+    "dataset": "load/datasets/questions_smoke.jsonl",
+    "duration": "45s planned; dry-run only",
+    "generation_model": "fake-groundstack",
+    "provider_mode": "fake",
+    "random_seed": 1201,
+    "spawn_rate": 1,
+    "success_criteria": [
+      "No malformed successful responses",
+      "No 5xx responses",
+      "Terminal SSE event for chat streams",
+      "Citation schema valid when citations are present"
+    ],
+    "warmup_duration_seconds": 0,
+    "workload_profile": "smoke"
+  },
+  "environment": {
+    "cpu_count": 10,
+    "date": "2026-08-23T15:01:33Z",
+    "docker": "Docker daemon access was sandbox-limited during local probing.",
+    "host": "local macOS arm64 development machine",
+    "ollama": "not available on PATH",
+    "python": "3.14.2"
+  },
+  "evidence_paths": [
+    "load/reports/smoke-20260823T150132Z/manifest.json",
+    "load/reports/smoke-20260823T150132Z/summary.json"
+  ],
+  "failure_counts": {},
+  "git_commit": "6111d2d29f8b335d293a91958952371bfde37539",
+  "limitations": [
+    "Dry-run only; no application traffic was sent.",
+    "This evidence supports harness/report generation, not service capacity.",
+    "Raw load/reports artifacts are intentionally ignored and local."
+  ],
+  "percentiles": {
+    "p50_ms": null,
+    "p95_ms": null,
+    "p99_ms": null
+  },
+  "recovery_times": {},
+  "resource_use": {
+    "live_target": false,
+    "total_requests_sent": 0
+  },
+  "results": {
+    "errors": [],
+    "failures": 0,
+    "successful_answers": 0,
+    "total_requests": 0
+  }
+}

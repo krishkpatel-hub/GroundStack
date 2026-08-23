@@ -9,3 +9,6 @@
 7. Open the Discord integration page and show the server config plus escalation queue.
 8. Close with the architecture: Next.js, FastAPI, pgvector retrieval, reranking, LLaMA-compatible
    generation, Discord slash commands, feedback review, and launch guardrails.
+
+Use local or mocked demo data only. Do not describe the Discord page as a live public bot unless a
+real approved installation exists. Do not claim production traffic or real support-volume reduction.

@@ -1,15 +1,25 @@
 # GroundStack
 
-GroundStack is a portfolio-grade AI technical-support platform foundation for developer
-communities. It includes a working knowledge-ingestion pipeline, hybrid retrieval with
-structured citations, grounded answer generation over a local-first LLaMA-family
-provider, and a Discord slash-command adapter for explicit community questions.
+GroundStack is a portfolio-grade AI technical-support application for developer communities. It
+answers questions from an admin-managed knowledge base using hybrid retrieval, reranking, grounded
+generation, and citation validation. The `1.0.0-rc.1` branch packages the app as an audited,
+reproducible release candidate with security notes, benchmark evidence, and interview-ready
+documentation.
 
-Milestone 8 adds explicit runtime modes, provider-neutral OIDC authentication,
-backend ownership checks for conversations and feedback, production Dockerfiles,
-single-host demo deployment assets, backup/restore scripts, migration safety checks,
-and GitHub CI/release workflows. See `docs/security.md`, `docs/runbooks.md`,
-`deploy/README.md`, and `docs/adr-0001-auth-and-deployment.md`.
+GroundStack does not claim production deployment, live Discord adoption, completed fine-tuning, real
+usage volume, uptime, cost, or hosted-provider performance. Numeric claims are tracked in
+`docs/claims/CLAIMS.md` and benchmark evidence is under `docs/benchmarks/`.
+
+## What It Demonstrates
+
+- Retrieval-augmented generation with pgvector, PostgreSQL full-text search, RRF fusion, reranking,
+  and structured citations.
+- Streaming grounded answers that are rejected when citations are missing, malformed, or fabricated.
+- Admin source ingestion, evaluation records, feedback review, and training-candidate preparation.
+- Discord slash-command integration that processes only explicit commands and keeps Discord data out
+  of training.
+- Release engineering: CI, migrations, Dockerfiles, deployment guardrails, reliability profiles,
+  threat model, and evidence-backed claims.
 
 ## Prerequisites
 
@@ -84,7 +94,9 @@ make predeploy
 - `docker-compose.yml` runs PostgreSQL with the `pgvector` extension.
 - `docs` captures system architecture and delivery phases.
 
-See [docs/architecture.md](docs/architecture.md) and [docs/roadmap.md](docs/roadmap.md).
+See [docs/architecture/SYSTEM_OVERVIEW.md](docs/architecture/SYSTEM_OVERVIEW.md),
+[docs/architecture/RELEASE_INVENTORY.md](docs/architecture/RELEASE_INVENTORY.md),
+[docs/architecture.md](docs/architecture.md), and [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Environment
 
@@ -283,6 +295,14 @@ python scripts/check_migrations.py
 
 Backend endpoint tests use FastAPI's ASGI app directly and patch database or embedding
 boundaries where needed. Production ingestion uses real Sentence Transformers embeddings.
+
+Release-candidate evidence:
+
+- Final audit: [docs/reports/FINAL_RELEASE_AUDIT.md](docs/reports/FINAL_RELEASE_AUDIT.md)
+- Release checklist: [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
+- Known limitations: [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md)
+- Threat model: [docs/security/THREAT_MODEL.md](docs/security/THREAT_MODEL.md)
+- Capacity report: [docs/benchmarks/CAPACITY_REPORT.md](docs/benchmarks/CAPACITY_REPORT.md)
 
 ## Planned Phases
 

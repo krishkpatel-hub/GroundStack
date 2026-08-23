@@ -4,9 +4,9 @@ prompt_version: grounded_answer/v1
 model_variant: fine_tuned_adapter
 dataset:
   name: groundstack-seed-dev
-  version: 0.1.0
+  version: 1.0.0-rc.1
   source_path: training/data/seed/groundstack_seed.jsonl
-  output_dir: training/data/processed/groundstack-seed-dev-0.1.0
+  output_dir: training/data/processed/groundstack-seed-dev-1.0.0-rc.1
   near_duplicate_threshold: 0.94
 split:
   seed: 1729

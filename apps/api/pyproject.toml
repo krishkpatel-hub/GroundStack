@@ -1,6 +1,6 @@
 [project]
 name = "groundstack-api"
-version = "0.1.0"
+version = "1.0.0rc1"
 description = "FastAPI backend for GroundStack."
 requires-python = ">=3.12"
 dependencies = [

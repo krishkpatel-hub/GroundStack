@@ -23,7 +23,9 @@ class DemoEmbeddingProvider:
 
     async def embed(self, request: EmbeddingRequest) -> list[EmbeddingResult]:
         return [
-            EmbeddingResult(text=text, vector=[float((index + len(text)) % 7) / 7 for index in range(384)])
+            EmbeddingResult(
+                text=text, vector=[float((index + len(text)) % 7) / 7 for index in range(384)]
+            )
             for text in request.inputs
         ]
 

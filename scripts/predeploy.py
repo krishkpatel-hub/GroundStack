@@ -13,7 +13,10 @@ def check(name: str, ok: bool, detail: str = "") -> bool:
 
 
 def command_ok(command: list[str]) -> bool:
-    return subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+    return (
+        subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+        == 0
+    )
 
 
 def tcp_ok(url: str) -> bool:
@@ -40,8 +43,14 @@ def main() -> int:
     checks = [
         check("APP_ENV", env in {"demo", "production"}, "set APP_ENV=demo or production"),
         check("dev auth bypass disabled", os.getenv("DEV_AUTH_BYPASS_ENABLED") == "false"),
-        check("exact CORS", bool(os.getenv("CORS_ORIGINS")) and "*" not in os.getenv("CORS_ORIGINS", "")),
-        check("trusted hosts", bool(os.getenv("TRUSTED_HOSTS")) and "*" not in os.getenv("TRUSTED_HOSTS", "")),
+        check(
+            "exact CORS",
+            bool(os.getenv("CORS_ORIGINS")) and "*" not in os.getenv("CORS_ORIGINS", ""),
+        ),
+        check(
+            "trusted hosts",
+            bool(os.getenv("TRUSTED_HOSTS")) and "*" not in os.getenv("TRUSTED_HOSTS", ""),
+        ),
         check("metrics token present", bool(os.getenv("METRICS_INTERNAL_TOKEN"))),
         check("migration history", command_ok([sys.executable, "scripts/check_migrations.py"])),
         check("no local secret files", no_secret_files()),

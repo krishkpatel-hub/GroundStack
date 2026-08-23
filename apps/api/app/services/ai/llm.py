@@ -1,4 +1,6 @@
+import asyncio
 import json
+import math
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -299,8 +301,93 @@ class OpenAICompatibleProvider(LLMProvider):
             )
 
 
+class FakeLLMProvider(LLMProvider):
+    provider = "fake"
+
+    def __init__(self) -> None:
+        settings = get_settings()
+        self.model = settings.llm_model or "fake-groundstack"
+        self.first_token_delay_ms = settings.fake_llm_first_token_delay_ms
+        self.token_rate_per_second = settings.fake_llm_token_rate_per_second
+        self.total_tokens = settings.fake_llm_total_tokens
+        self.failure_mode = settings.fake_llm_failure_mode
+
+    async def health(self) -> LLMHealth:
+        return LLMHealth(
+            provider=self.provider,
+            model=self.model,
+            reachable=True,
+            model_available=True,
+            loaded=True,
+            detail=f"fake provider mode={self.failure_mode}",
+        )
+
+    async def model_available(self) -> bool:
+        return True
+
+    async def generate(self, request: GenerationRequest) -> GenerationResult:
+        content_parts: list[str] = []
+        async for event in self.stream(request):
+            if event.type == "token" and event.token:
+                content_parts.append(event.token)
+            if event.type == "error":
+                raise LLMProviderError(
+                    event.error_message or "fake provider error",
+                    category=event.error_category or "fake_provider_error",
+                )
+        return GenerationResult(
+            content="".join(content_parts),
+            provider=self.provider,
+            model=self.model,
+            finish_reason="stop",
+            input_tokens=128,
+            output_tokens=len(content_parts),
+        )
+
+    async def stream(self, request: GenerationRequest) -> AsyncIterator[GenerationEvent]:
+        if self.failure_mode == "timeout":
+            await asyncio.sleep(max(0.01, self.first_token_delay_ms / 1000))
+            yield GenerationEvent(
+                type="error", error_category="provider_timeout", error_message="fake timeout"
+            )
+            return
+        if self.failure_mode in {"http_429", "http_500", "connection_failure", "malformed"}:
+            yield GenerationEvent(
+                type="error",
+                error_category=self.failure_mode,
+                error_message=f"fake {self.failure_mode}",
+            )
+            return
+        yield GenerationEvent(type="start")
+        if self.first_token_delay_ms:
+            await asyncio.sleep(self.first_token_delay_ms / 1000)
+        token_delay = 1 / self.token_rate_per_second
+        phrase = "GroundStack fake benchmark response grounded in source [S1]. "
+        repeated = math.ceil(self.total_tokens / max(1, len(phrase.split())))
+        tokens = (" ".join([phrase] * repeated)).split()[: self.total_tokens]
+        for index, token in enumerate(tokens):
+            if self.failure_mode == "stream_interruption" and index >= max(1, len(tokens) // 2):
+                yield GenerationEvent(
+                    type="error",
+                    error_category="stream_interruption",
+                    error_message="fake stream interruption",
+                )
+                return
+            yield GenerationEvent(type="token", token=token + " ")
+            if token_delay:
+                await asyncio.sleep(token_delay)
+        yield GenerationEvent(type="usage", input_tokens=128, output_tokens=len(tokens))
+        yield GenerationEvent(
+            type="completed",
+            content=" ".join(tokens),
+            finish_reason="stop",
+        )
+
+
 def get_llm_provider() -> LLMProvider:
     settings = get_settings()
+    if settings.llm_provider == "fake":
+        return FakeLLMProvider()
     if settings.llm_provider == "openai_compatible":
         return OpenAICompatibleProvider()
     return OllamaProvider()

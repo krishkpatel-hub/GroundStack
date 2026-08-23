@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     llm_request_timeout_seconds: float = Field(default=120.0, gt=0)
     llm_prewarm: bool = False
     llm_max_retries: int = Field(default=1, ge=0, le=3)
+    fake_llm_first_token_delay_ms: int = Field(default=25, ge=0, le=10000)
+    fake_llm_token_rate_per_second: float = Field(default=80.0, gt=0, le=1000)
+    fake_llm_total_tokens: int = Field(default=80, ge=1, le=4096)
+    fake_llm_failure_mode: str = Field(default="none")
     llm_max_concurrent_requests: int | None = Field(default=None, ge=1, le=32)
     llm_model_variant: str = "base"
     llm_adapter_name: str = ""
@@ -231,6 +235,17 @@ class Settings(BaseSettings):
             raise ValueError(
                 "Test mode cannot use remote model providers unless explicitly overridden."
             )
+        fake_modes = {
+            "none",
+            "timeout",
+            "http_429",
+            "http_500",
+            "connection_failure",
+            "malformed",
+            "stream_interruption",
+        }
+        if self.fake_llm_failure_mode not in fake_modes:
+            raise ValueError(f"FAKE_LLM_FAILURE_MODE must be one of {sorted(fake_modes)}.")
         return self
 
     @property

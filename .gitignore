@@ -59,6 +59,7 @@ data/private/
 data/raw/private/
 
 training/.venv/
+load/reports/
 training/data/processed/*
 !training/data/processed/.gitkeep
 training/reports/*

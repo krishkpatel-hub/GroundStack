@@ -4,7 +4,7 @@ services:
     runtime: docker
     plan: free
     repo: https://github.com/krishkpatel-hub/GroundStack
-    branch: launch/public-demo
+    branch: deploy/live-demo
     dockerfilePath: apps/api/Dockerfile
     dockerContext: .
     healthCheckPath: /api/v1/health/live
@@ -19,9 +19,33 @@ services:
       - key: ALLOW_ANONYMOUS_DEMO
         value: "true"
       - key: DEMO_CHAT_ENABLED
-        value: "false"
+        value: "true"
       - key: DEMO_REDIS_REQUIRED
         value: "true"
+      - key: DEMO_REQUEST_LIMIT_PER_MINUTE
+        value: "4"
+      - key: DEMO_DAILY_QUESTION_LIMIT
+        value: "40"
+      - key: DEMO_DAILY_TOKEN_LIMIT
+        value: "10000"
+      - key: DEMO_MAX_QUESTION_LENGTH
+        value: "500"
+      - key: DEMO_MAX_CONTEXT_TOKENS
+        value: "2200"
+      - key: DEMO_PROVIDER_FAILURE_THRESHOLD
+        value: "3"
+      - key: DEMO_PROVIDER_FAILURE_WINDOW_SECONDS
+        value: "300"
+      - key: DEMO_UPLOAD_LIMIT_BYTES
+        value: "0"
+      - key: DEMO_MAX_CONVERSATIONS
+        value: "3"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: TRUSTED_HOSTS
+        sync: false
+      - key: PUBLIC_API_BASE_URL
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_DIRECT_URL
@@ -30,6 +54,8 @@ services:
         value: "true"
       - key: REDIS_URL
         sync: false
+      - key: REDIS_KEY_NAMESPACE
+        value: groundstack
       - key: LLM_PROVIDER
         value: openai_compatible
       - key: LLM_BASE_URL
@@ -38,69 +64,21 @@ services:
         sync: false
       - key: LLM_MODEL
         sync: false
+      - key: LLM_TIMEOUT_SECONDS
+        value: "45"
+      - key: LLM_REQUEST_TIMEOUT_SECONDS
+        value: "45"
+      - key: LLM_MAX_OUTPUT_TOKENS
+        value: "500"
+      - key: LLM_MAX_CONCURRENT_REQUESTS
+        value: "2"
+      - key: LLM_MAX_RETRIES
+        value: "1"
       - key: METRICS_INTERNAL_TOKEN
-        sync: false
+        generateValue: true
       - key: DISCORD_INTEGRATION_ENABLED
         value: "false"
-      - key: DISCORD_APPLICATION_ID
-        sync: false
-      - key: DISCORD_PUBLIC_KEY
-        sync: false
-      - key: DISCORD_BOT_TOKEN
-        sync: false
-      - key: DISCORD_INTERACTION_TOKEN_ENCRYPTION_KEY
-        sync: false
-      - key: DISCORD_IDENTITY_HMAC_KEY
-        sync: false
       - key: DISCORD_ALLOW_DMS
         value: "false"
       - key: DISCORD_DEFAULT_RETENTION_DAYS
         value: "30"
-
-  - type: worker
-    name: groundstack-discord-worker
-    runtime: docker
-    plan: free
-    repo: https://github.com/krishkpatel-hub/GroundStack
-    branch: feature/discord-integration
-    dockerfilePath: apps/api/Dockerfile
-    dockerContext: .
-    autoDeploy: false
-    dockerCommand: python -m app.cli.discord_worker
-    envVars:
-      - key: APP_ENV
-        value: demo
-      - key: DOCS_ENABLED
-        value: "false"
-      - key: DEV_AUTH_BYPASS_ENABLED
-        value: "false"
-      - key: DEMO_REDIS_REQUIRED
-        value: "true"
-      - key: DATABASE_URL
-        sync: false
-      - key: DATABASE_DIRECT_URL
-        sync: false
-      - key: DB_SSL_REQUIRED
-        value: "true"
-      - key: REDIS_URL
-        sync: false
-      - key: LLM_PROVIDER
-        value: openai_compatible
-      - key: LLM_BASE_URL
-        sync: false
-      - key: LLM_API_KEY
-        sync: false
-      - key: LLM_MODEL
-        sync: false
-      - key: DISCORD_INTEGRATION_ENABLED
-        value: "false"
-      - key: DISCORD_APPLICATION_ID
-        sync: false
-      - key: DISCORD_PUBLIC_KEY
-        sync: false
-      - key: DISCORD_BOT_TOKEN
-        sync: false
-      - key: DISCORD_INTERACTION_TOKEN_ENCRYPTION_KEY
-        sync: false
-      - key: DISCORD_IDENTITY_HMAC_KEY
-        sync: false

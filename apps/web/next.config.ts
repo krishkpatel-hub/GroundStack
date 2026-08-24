@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source:
+          "/:privateRoute(activity|conversations|discord|evaluation|knowledge|settings|sources|training)(.*)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
     ];
   },
 };

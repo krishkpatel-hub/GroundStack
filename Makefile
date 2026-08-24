@@ -83,25 +83,25 @@ benchmark-retrieval:
 	cd apps/api && . .venv/bin/activate && python -m app.cli.benchmark_retrieval
 
 benchmark-import-check:
-	PYTHONPATH=. GROUNDSTACK_LOAD_MAX_REQUESTS=1 python3 -c "import load.locustfile"
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. GROUNDSTACK_LOAD_MAX_REQUESTS=1 python -c "import load.locustfile"
 
 benchmark-smoke:
-	PYTHONPATH=. python3 -m load.run_locust_profile --profile smoke --dry-run
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile smoke --dry-run
 
 benchmark-volume-300:
-	PYTHONPATH=. python3 -m load.run_locust_profile --profile volume-300 --confirm
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile volume-300 --confirm
 
 benchmark-burst:
-	PYTHONPATH=. python3 -m load.run_locust_profile --profile burst --confirm
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile burst --confirm
 
 benchmark-soak-short:
-	PYTHONPATH=. python3 -m load.run_locust_profile --profile soak-short --confirm
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile soak-short --confirm
 
 benchmark-ollama:
-	PYTHONPATH=. python3 -m load.run_locust_profile --profile ollama --confirm
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile ollama --confirm
 
 benchmark-real-provider:
-	PYTHONPATH=. python3 -m load.run_locust_profile --profile real-provider --confirm --confirm-real-provider
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile real-provider --confirm --confirm-real-provider
 
 failure-test:
 	python3 scripts/failure_test.py --validate-only
@@ -152,10 +152,10 @@ compare-prompts:
 	PYTHONPATH=evaluation python3 evaluation/runners/compare_prompts.py
 
 load-smoke-fake:
-	PYTHONPATH=. python3 -m load.run_locust_profile --profile smoke --dry-run
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile smoke --dry-run
 
 load-sustained-fake:
-	PYTHONPATH=. python3 -m load.run_locust_profile --profile soak-short --confirm
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile soak-short --confirm
 
 load-300-real:
-	PYTHONPATH=. python3 -m load.run_locust_profile --profile real-provider --confirm --confirm-real-provider
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile real-provider --confirm --confirm-real-provider

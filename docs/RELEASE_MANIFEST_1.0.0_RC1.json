@@ -1,0 +1,43 @@
+{
+  "name": "GroundStack",
+  "version": "1.0.0-rc.1",
+  "apiVersion": "1.0.0rc1",
+  "releaseBranch": "release/v1.0.0-rc1",
+  "baseBranch": "main",
+  "baseCommit": "839f230d33b77a4ed9b699214a38b45cdc29d37a",
+  "status": "release-candidate",
+  "productionRelease": false,
+  "tagCreated": false,
+  "deploymentCreated": false,
+  "scopeFreeze": true,
+  "includedMilestones": [
+    "Milestone 11: Discord integration",
+    "Milestone 12: Reliability evidence and benchmarking",
+    "Milestone 13: v1.0 release candidate audit and portfolio package"
+  ],
+  "evidence": {
+    "finalAudit": "docs/reports/FINAL_RELEASE_AUDIT.md",
+    "releaseChecklist": "docs/RELEASE_CHECKLIST.md",
+    "releaseNotes": "docs/RELEASE_NOTES_1.0.0_RC1.md",
+    "benchmarkEvidence": "docs/benchmarks/evidence/2026-08-23-smoke-dry-run.json",
+    "dependencyInventory": "docs/reports/DEPENDENCY_LICENSE_INVENTORY.md",
+    "threatModel": "docs/security/THREAT_MODEL.md",
+    "aiSecurityReview": "docs/security/AI_SECURITY_REVIEW.md",
+    "knownLimitations": "docs/KNOWN_LIMITATIONS.md"
+  },
+  "excludedArtifacts": [
+    ".env files",
+    "secrets and credential files",
+    "uploaded/private documents",
+    "private datasets",
+    "database volumes",
+    "virtual environments",
+    "node_modules",
+    "build output",
+    "logs",
+    "coverage",
+    "load reports",
+    "processed training datasets",
+    "model weights and adapters"
+  ]
+}

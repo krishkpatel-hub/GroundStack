@@ -302,6 +302,7 @@ Release-candidate evidence:
 - Release checklist: [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
 - Known limitations: [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md)
 - Threat model: [docs/security/THREAT_MODEL.md](docs/security/THREAT_MODEL.md)
+- AI security review: [docs/security/AI_SECURITY_REVIEW.md](docs/security/AI_SECURITY_REVIEW.md)
 - Capacity report: [docs/benchmarks/CAPACITY_REPORT.md](docs/benchmarks/CAPACITY_REPORT.md)
 
 ## Planned Phases

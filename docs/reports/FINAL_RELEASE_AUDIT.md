@@ -5,6 +5,9 @@ Version: `1.0.0-rc.1`
 Branch: `release/v1.0.0-rc1`  
 Base: `origin/main` at `839f230d33b77a4ed9b699214a38b45cdc29d37a`
 
+AI-security guidance reviewed: OWASP GenAI LLM Top 10 2026, released August 3, 2026; reviewed
+2026-08-24. This audit does not claim complete 2026 compliance.
+
 ## Release Decision
 
 Status: **release candidate ready for review, not approved for production release**.
@@ -72,8 +75,8 @@ production deployment, not a tagged GitHub release, and not evidence of live cus
 | `docs/benchmarks/evidence/2026-08-23-smoke-dry-run.json` | Committed synthetic benchmark evidence from Milestone 12 |
 | `evaluation/reports/eval-20260823T202055Z.json` | Release-candidate evaluation runner output |
 | `docs/reports/DEPENDENCY_LICENSE_INVENTORY.md` | Dependency snapshot and audit status |
-| `docs/security/THREAT_MODEL.md` | Threat model mapped to current OWASP GenAI guidance |
-| `docs/security/AI_SECURITY_REVIEW.md` | AI-specific abuse and control review |
+| `docs/security/THREAT_MODEL.md` | Threat model reviewed against OWASP GenAI LLM Top 10 2026 |
+| `docs/security/AI_SECURITY_REVIEW.md` | AI-specific abuse and control review with historical 2025 mappings retained only for existing tests/controls |
 | `docs/RELEASE_CHECKLIST.md` | Remaining gates before final `v1.0.0` |
 
 ## Deferred or Constrained Checks

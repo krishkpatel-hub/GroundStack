@@ -1,8 +1,14 @@
 # GroundStack Threat Model
 
 Version: `1.0.0-rc.1`  
-Guidance checked: OWASP GenAI LLM Top 10 2026, published August 4, 2026, plus the
-OWASP GenAI/LLM Top 10 2025 category model still referenced by industry mappings.
+Reviewed edition: [OWASP GenAI LLM Top 10 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/),
+released August 3, 2026.
+
+Review date: 2026-08-24.
+
+This threat model was updated against the 2026 edition as the current OWASP GenAI guidance. It does
+not claim complete 2026 compliance. The 2025 category model is preserved only where earlier
+GroundStack tests and controls were originally mapped to those categories.
 
 ## Assets
 
@@ -38,6 +44,14 @@ OWASP GenAI/LLM Top 10 2025 category model still referenced by industry mappings
 | SSRF and unsafe URLs | Mitigated | URL allowlist, scheme checks, private IP rejection, no crawling | DNS rebinding should remain covered by tests. |
 | Discord signature/replay abuse | Mitigated | Raw-body Ed25519 verification, timestamp check, Redis replay claim, DB dedupe fallback | Live Discord sandbox not yet executed. |
 | Secret exposure | Partially mitigated | `.gitignore`, placeholder env examples, secret scans, no frontend server secret usage | Public git history must be monitored; no history rewrite performed. |
+
+## 2025-Mapped Test Coverage Preserved
+
+Several existing regression tests were written before the 2026 review and remain useful evidence for
+controls commonly described in the 2025 category model, including prompt injection, sensitive
+information disclosure, improper output handling, excessive agency, system prompt leakage, vector and
+embedding weaknesses, misinformation, and unbounded consumption. These mappings are historical test
+coverage notes, not a claim that every 2026 risk has been fully audited.
 
 ## Accepted Limitations
 

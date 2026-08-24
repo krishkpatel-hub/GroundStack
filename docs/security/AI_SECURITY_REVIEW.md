@@ -1,8 +1,13 @@
 # AI Security Review
 
 Version: `1.0.0-rc.1`  
-Review date: 2026-08-23  
-External guidance checked: OWASP GenAI LLM Top 10 2026 and OWASP GenAI/LLM Top 10 2025 mappings.
+Review date: 2026-08-24
+
+Current guidance checked: [OWASP GenAI LLM Top 10 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/),
+released August 3, 2026. Historical 2025 mappings are retained only for tests and controls that were
+originally written against the 2025 category model.
+
+This review is a release-candidate audit, not a certification or complete compliance claim.
 
 ## Findings
 
@@ -28,6 +33,9 @@ External guidance checked: OWASP GenAI LLM Top 10 2026 and OWASP GenAI/LLM Top 1
 - `apps/api/tests/discord/test_training_exclusion.py`
 - `apps/api/tests/ingestion/test_url_security.py`
 - `evaluation/runners/run_eval.py --suite all`
+
+These tests cover concrete GroundStack controls and preserve earlier 2025-category mappings where
+applicable. They do not prove complete coverage of every 2026 OWASP GenAI LLM risk.
 
 ## Release Decision
 

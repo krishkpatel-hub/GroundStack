@@ -1,8 +1,10 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
+import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.core.auth import Principal, optional_principal
 from app.main import app
 from app.services.operations.feedback import FeedbackError
 
@@ -53,10 +55,29 @@ class FakeRepository:
         return True
 
 
+@pytest.fixture(autouse=True)
+def clear_dependency_overrides():
+    app.dependency_overrides.clear()
+    yield
+    app.dependency_overrides.clear()
+
+
+def _set_chat_principal() -> None:
+    async def principal():
+        return Principal(
+            subject="test:chat-user",
+            roles=frozenset(["user"]),
+            authenticated=True,
+        )
+
+    app.dependency_overrides[optional_principal] = principal
+
+
 async def test_feedback_put_is_idempotent_shape(monkeypatch) -> None:
     async def no_limit(_request):
         return None
 
+    _set_chat_principal()
     monkeypatch.setattr("app.api.v1.feedback.async_session_factory", lambda: FakeSession())
     monkeypatch.setattr("app.api.v1.feedback.FeedbackRepository", FakeRepository)
     monkeypatch.setattr("app.api.v1.feedback._enforce_feedback_limit", no_limit)
@@ -83,6 +104,7 @@ async def test_feedback_put_rejects_invalid_message(monkeypatch) -> None:
     async def no_limit(_request):
         return None
 
+    _set_chat_principal()
     monkeypatch.setattr("app.api.v1.feedback.async_session_factory", lambda: FakeSession())
     monkeypatch.setattr("app.api.v1.feedback.FeedbackRepository", FakeRepository)
     monkeypatch.setattr("app.api.v1.feedback._enforce_feedback_limit", no_limit)
@@ -95,3 +117,19 @@ async def test_feedback_put_rejects_invalid_message(monkeypatch) -> None:
         )
 
     assert response.status_code == 404
+
+
+async def test_feedback_put_rejects_unauthenticated_request(monkeypatch) -> None:
+    async def no_limit(_request):
+        return None
+
+    monkeypatch.setattr("app.api.v1.feedback._enforce_feedback_limit", no_limit)
+    message_id = "11111111-1111-1111-1111-111111111111"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.put(
+            f"/api/v1/messages/{message_id}/feedback",
+            json={"rating": "positive", "client_request_id": "test-client"},
+        )
+
+    assert response.status_code == 401

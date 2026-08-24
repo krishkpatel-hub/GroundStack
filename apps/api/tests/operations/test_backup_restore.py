@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,33 @@ def _maintenance_url(url: str) -> str:
     if not prefix or not rest:
         pytest.skip("DATABASE_URL is not a PostgreSQL URL with a database name.")
     return prefix + "/postgres"
+
+
+def _run(
+    command: list[str],
+    *,
+    env: Mapping[str, str] | None = None,
+    capture_output: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    result = subprocess.run(
+        command,
+        capture_output=capture_output,
+        text=True,
+        env=dict(env) if env is not None else None,
+        check=False,
+    )
+    if result.returncode != 0:
+        output = "\n".join(
+            part
+            for part in [
+                f"command: {' '.join(command)}",
+                f"exit_code: {result.returncode}",
+                f"stdout:\n{result.stdout.strip()}" if result.stdout else "stdout: <empty>",
+                f"stderr:\n{result.stderr.strip()}" if result.stderr else "stderr: <empty>",
+            ]
+        )
+        pytest.fail(output)
+    return result
 
 
 @pytest.mark.integration
@@ -34,7 +62,7 @@ def test_postgres_backup_restores_into_temporary_database(tmp_path: Path) -> Non
     root = Path(__file__).resolve().parents[4]
 
     try:
-        subprocess.run(
+        _run(
             [
                 "psql",
                 maintenance_url,
@@ -43,38 +71,28 @@ def test_postgres_backup_restores_into_temporary_database(tmp_path: Path) -> Non
                 "-c",
                 f'CREATE DATABASE "{restore_db}"',
             ],
-            check=True,
         )
-        backup = (
-            subprocess.run(
-                [str(root / "scripts" / "backup_postgres.sh")],
-                check=True,
-                capture_output=True,
-                text=True,
-                env={**os.environ, "DATABASE_URL": source_url, "BACKUP_DIR": str(tmp_path)},
-            )
-            .stdout.strip()
-            .splitlines()[-1]
+        backup_result = _run(
+            [str(root / "scripts" / "backup_postgres.sh")],
+            env={**os.environ, "DATABASE_URL": source_url, "BACKUP_DIR": str(tmp_path)},
         )
-        subprocess.run(
+        backup = backup_result.stdout.strip().splitlines()[-1]
+        assert Path(backup).is_file()
+        _run(
             [str(root / "scripts" / "restore_postgres.sh")],
-            check=True,
             env={
                 **os.environ,
                 "RESTORE_DATABASE_URL": restore_url,
                 "BACKUP_FILE": backup,
             },
         )
-        result = subprocess.run(
+        result = _run(
             [
                 "psql",
                 restore_url,
                 "-tAc",
                 "select count(*) from information_schema.tables where table_schema='public'",
             ],
-            check=True,
-            capture_output=True,
-            text=True,
         )
         assert int(result.stdout.strip()) > 0
     finally:

@@ -79,7 +79,7 @@ jobs:
           pg_restore --version | grep -Eq '^pg_restore \(PostgreSQL\) 17\.'
           psql --version | grep -Eq '^psql \(PostgreSQL\) 17\.'
       # docker/setup-buildx-action v3.11.0
-      - uses: docker/setup-buildx-action@18ce135bb5112fa8ce4ed6c17ab05699d7f3a5e0
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e
       - name: Compute metadata
         id: meta
         run: |

@@ -1,4 +1,4 @@
-FROM node:24.11.1-bookworm-slim AS deps
+FROM node:26.8.1-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
@@ -9,7 +9,7 @@ WORKDIR /app
 COPY apps/web apps/web
 RUN npm run build --workspace apps/web
 
-FROM node:24.11.1-bookworm-slim AS runtime
+FROM node:26.8.1-bookworm-slim AS runtime
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 WORKDIR /app

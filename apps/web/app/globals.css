@@ -348,6 +348,17 @@ select:focus-visible {
   background: var(--accent-hover);
 }
 
+.button-danger {
+  border-color: var(--danger-border);
+  background: var(--danger-surface);
+  color: var(--danger);
+}
+
+.button-danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: #fff1f2;
+}
+
 .button:disabled,
 .field:disabled {
   cursor: not-allowed;
@@ -400,6 +411,25 @@ select:focus-visible {
   padding: 10px 12px;
   font-size: 0.875rem;
   line-height: 1.5;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgb(17 24 39 / 0.35);
+  padding: 24px;
+}
+
+.modal-panel {
+  width: min(100%, 440px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  padding: 20px;
 }
 
 .divider {

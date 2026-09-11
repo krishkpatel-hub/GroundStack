@@ -126,6 +126,12 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
       },
     }),
   );
+  await page.route(`**/api/v1/documents/${documentId}`, (route) =>
+    route.fulfill({
+      status: route.request().method() === "DELETE" ? 204 : 200,
+      body: "",
+    }),
+  );
   await page.route("**/api/v1/chat/stream", (route) =>
     route.fulfill({
       headers: { "content-type": "text/event-stream" },
@@ -146,52 +152,6 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
         message_id: messageId,
         conversation_id: conversationId,
       },
-    }),
-  );
-  await page.route("**/api/v1/evaluation/runs", (route) =>
-    route.fulfill({
-      json: [
-        {
-          id: "66666666-6666-6666-6666-666666666666",
-          name: "Demo evaluation",
-          status: "completed",
-          suite_names: ["generation"],
-          dataset_version: "demo-v1",
-          dataset_checksum: "demo",
-          model_metadata: { provider: "demo" },
-          prompt_version: "grounded_answer/v1",
-          retrieval_configuration: { top_k: 8 },
-          environment_metadata: { report_path: "evaluation/reports/demo.json" },
-          aggregate_metrics: { pass_rate: 1, sample_count: 4 },
-          failure: null,
-          created_at: "2026-08-19T12:00:00Z",
-          started_at: "2026-08-19T12:00:00Z",
-          completed_at: "2026-08-19T12:00:01Z",
-        },
-      ],
-    }),
-  );
-  await page.route("**/api/v1/training/candidates", (route) =>
-    route.fulfill({
-      json: [
-        {
-          id: "77777777-7777-7777-7777-777777777777",
-          message_id: messageId,
-          feedback_id: "88888888-8888-8888-8888-888888888888",
-          status: "pending",
-          proposed_question: "How do I configure pgvector?",
-          evidence_snapshot: [{ citation_id: "S1" }],
-          proposed_answer: "Run migrations after PostgreSQL starts.",
-          citation_references: ["S1"],
-          redaction_status: "pending",
-          provenance_status: "pending",
-          reviewer_notes: null,
-          reviewer_identifier: null,
-          dataset_export_status: "not_exported",
-          created_at: "2026-08-19T12:00:00Z",
-          reviewed_at: null,
-        },
-      ],
     }),
   );
 }
@@ -220,7 +180,7 @@ test("landing page loads an example question into chat and completes a cited ans
   await expect(page.getByText("Saved")).toBeVisible();
 });
 
-test("admin product routes expose real operational states", async ({
+test("admin core routes expose source and document-management states", async ({
   page,
 }) => {
   await mockApi(page, "admin");
@@ -228,19 +188,29 @@ test("admin product routes expose real operational states", async ({
   await expect(
     page.getByRole("heading", { name: "Sources and citations" }),
   ).toBeVisible();
-  await page.goto("/evaluation");
-  await expect(page.getByText("Demo evaluation")).toBeVisible();
-  await page.goto("/training");
-  await expect(page.getByText("How do I configure pgvector?")).toBeVisible();
+  await expect(page.getByText("GroundStack setup")).toBeVisible();
+  await page.goto("/knowledge");
+  await expect(
+    page.getByRole("heading", { name: "Add knowledge" }),
+  ).toBeVisible();
+  await expect(page.getByText("Maximum file size: 10 MB")).toBeVisible();
+  await page.getByRole("button", { name: "Delete" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Delete document?" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Cancel" }).click();
 });
 
 test("anonymous navigation hides admin destinations", async ({ page }) => {
   await mockApi(page, "anonymous");
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Knowledge admin" })).toHaveCount(
-    0,
-  );
-  await expect(page.getByRole("link", { name: "Evaluation" })).toHaveCount(0);
+  const primaryNav = page.getByLabel("Primary navigation");
+  await expect(
+    primaryNav.getByRole("link", { name: "Manage documents" }),
+  ).toHaveCount(0);
+  await expect(
+    primaryNav.getByRole("link", { name: "Evaluation" }),
+  ).toHaveCount(0);
 });
 
 test("empty database states stay useful", async ({ page }) => {
@@ -248,14 +218,25 @@ test("empty database states stay useful", async ({ page }) => {
   await page.route("**/api/v1/documents?**", (route) =>
     route.fulfill({ json: { total: 0, limit: 20, offset: 0, items: [] } }),
   );
-  await page.route("**/api/v1/evaluation/runs", (route) =>
-    route.fulfill({ json: [] }),
-  );
   await page.goto("/sources");
   await expect(page.getByText("No documents yet")).toBeVisible();
-  await page.goto("/evaluation");
+  await page.goto("/ask");
   await expect(
-    page.getByRole("heading", { name: "No evaluation runs" }),
+    page.getByRole("heading", {
+      name: "Add documentation before asking questions",
+    }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Question")).toBeDisabled();
+});
+
+test("api connectivity errors are written for users instead of hidden", async ({
+  page,
+}) => {
+  await mockApi(page, "admin");
+  await page.route("**/api/v1/documents?**", (route) => route.abort("failed"));
+  await page.goto("/ask");
+  await expect(
+    page.getByText("GroundStack cannot reach the API"),
   ).toBeVisible();
 });
 
@@ -267,7 +248,9 @@ test("mobile navigation and axe scan pass the core landing page", async ({
   await page.goto("/");
   await page.getByRole("button", { name: "Open navigation" }).click();
   await expect(
-    page.getByRole("link", { name: "Ask GroundStack" }),
+    page
+      .getByLabel("Primary navigation")
+      .getByRole("link", { name: "Ask a question" }),
   ).toBeVisible();
   const results = await new AxeBuilder({ page })
     .disableRules(["color-contrast"])
@@ -281,7 +264,7 @@ test("core routes do not emit browser console errors", async ({ page }) => {
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
-  for (const route of ["/", "/ask", "/sources", "/knowledge", "/evaluation"]) {
+  for (const route of ["/", "/ask", "/sources", "/knowledge", "/about"]) {
     await page.goto(route);
     await page.waitForLoadState("networkidle");
   }

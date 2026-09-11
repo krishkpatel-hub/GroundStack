@@ -98,29 +98,6 @@ async function mockScreens(page: Page) {
       ].join(""),
     }),
   );
-  await page.route("**/api/v1/evaluation/runs", (route) =>
-    route.fulfill({
-      json: [
-        {
-          id: "66666666-6666-6666-6666-666666666666",
-          name: "Demo evaluation",
-          status: "completed",
-          suite_names: ["generation"],
-          dataset_version: "demo-v1",
-          dataset_checksum: "demo",
-          model_metadata: { provider: "demo" },
-          prompt_version: "grounded_answer/v1",
-          retrieval_configuration: { top_k: 8 },
-          environment_metadata: { report_path: "evaluation/reports/demo.json" },
-          aggregate_metrics: { pass_rate: 1, sample_count: 4 },
-          failure: null,
-          created_at: "2026-08-19T12:00:00Z",
-          started_at: "2026-08-19T12:00:00Z",
-          completed_at: "2026-08-19T12:00:01Z",
-        },
-      ],
-    }),
-  );
 }
 
 test("capture portfolio screenshots", async ({ page }) => {
@@ -138,12 +115,6 @@ test("capture portfolio screenshots", async ({ page }) => {
   await page.screenshot({ path: `${out}/source-viewer.png`, fullPage: true });
   await page.goto("/knowledge");
   await page.screenshot({ path: `${out}/knowledge-admin.png`, fullPage: true });
-  await page.goto("/evaluation");
-  await page.getByText("Demo evaluation").waitFor();
-  await page.screenshot({
-    path: `${out}/evaluation-comparison.png`,
-    fullPage: true,
-  });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ask?q=How%20do%20I%20configure%20pgvector%3F");
   await page.screenshot({ path: `${out}/mobile-chat.png`, fullPage: true });

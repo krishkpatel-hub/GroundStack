@@ -1,4 +1,5 @@
 import { type Citation, type RetrievalFilters } from "@/lib/retrieval";
+import { friendlyApiError } from "@/lib/knowledge";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -59,13 +60,15 @@ export async function fetchConversations(
     limit: String(options.limit ?? 50),
     offset: String(options.offset ?? 0),
   });
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/conversations?${params}`,
-    {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/v1/conversations?${params}`, {
       cache: "no-store",
       signal: options.signal,
-    },
-  );
+    });
+  } catch (error) {
+    throw friendlyApiError(error, "Conversation load failed.");
+  }
   if (!response.ok) {
     throw new Error(`Conversation load failed with ${response.status}`);
   }
@@ -154,13 +157,18 @@ export async function* streamChat(
   },
   signal?: AbortSignal,
 ): AsyncGenerator<ChatStreamEvent> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/chat/stream`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-    signal,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/v1/chat/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+      signal,
+    });
+  } catch (error) {
+    throw friendlyApiError(error, "Chat stream failed.");
+  }
 
   if (!response.ok || !response.body) {
     throw new Error(`Chat stream failed with ${response.status}`);

@@ -1,9 +1,7 @@
 "use client";
 
 import {
-  Bot,
   BookOpenText,
-  ChartNoAxesCombined,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -12,7 +10,6 @@ import {
   Menu,
   MessageSquare,
   Settings,
-  ShieldCheck,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -33,20 +30,16 @@ type AppFrameProps = {
 
 const publicItems = [
   { href: "/", label: "Overview", icon: Home },
-  { href: "/ask", label: "Ask GroundStack", icon: MessageSquare },
+  { href: "/ask", label: "Ask a question", icon: MessageSquare },
   { href: "/sources", label: "Sources", icon: BookOpenText },
-  { href: "/about", label: "Docs and about", icon: FileText },
+  { href: "/about", label: "How it works", icon: FileText },
 ];
 
 const userItems = [{ href: "/conversations", label: "History", icon: History }];
 
 const adminItems = [
-  { href: "/knowledge", label: "Knowledge admin", icon: UploadCloud },
-  { href: "/activity", label: "Ingestion activity", icon: ShieldCheck },
-  { href: "/evaluation", label: "Evaluation", icon: ChartNoAxesCombined },
-  { href: "/training", label: "Training review", icon: FileText },
-  { href: "/discord", label: "Discord integration", icon: Bot },
-  { href: "/settings", label: "System settings", icon: Settings },
+  { href: "/knowledge", label: "Manage documents", icon: UploadCloud },
+  { href: "/settings", label: "Health and settings", icon: Settings },
 ];
 
 export function AppFrame({

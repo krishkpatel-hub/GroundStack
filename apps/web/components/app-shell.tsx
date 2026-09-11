@@ -29,7 +29,11 @@ import {
   updateConversation,
   type Conversation,
 } from "@/lib/chat";
-import { fetchDocuments, type DocumentItem } from "@/lib/knowledge";
+import {
+  fetchDocuments,
+  friendlyApiError,
+  type DocumentItem,
+} from "@/lib/knowledge";
 import {
   feedbackCategories,
   saveFeedback,
@@ -78,6 +82,9 @@ export function AppShell({
   const [titleDraft, setTitleDraft] = useState("");
   const [deleteArmed, setDeleteArmed] = useState(false);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [documentsLoadError, setDocumentsLoadError] = useState<string | null>(
+    null,
+  );
   const [sourceType, setSourceType] = useState("");
   const [sourceId, setSourceId] = useState("");
   const [stage, setStage] = useState<StreamStage>("Idle");
@@ -108,10 +115,18 @@ export function AppShell({
       });
     fetchDocuments(100, 0)
       .then((page) => {
-        if (active) setDocuments(page.items);
+        if (active) {
+          setDocuments(page.items);
+          setDocumentsLoadError(null);
+        }
       })
-      .catch(() => {
-        if (active) setDocuments([]);
+      .catch((loadError) => {
+        if (active) {
+          setDocuments([]);
+          setDocumentsLoadError(
+            friendlyApiError(loadError, "Could not load documents.").message,
+          );
+        }
       });
     return () => {
       active = false;
@@ -163,6 +178,7 @@ export function AppShell({
   const selectedConversation = conversations.find(
     (conversation) => conversation.id === conversationId,
   );
+  const hasDocuments = documents.length > 0;
 
   const filteredConversations = useMemo(() => {
     const term = historySearch.trim().toLowerCase();
@@ -247,7 +263,7 @@ export function AppShell({
   ) {
     event?.preventDefault();
     const trimmed = (retry ?? question).trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || loading || !hasDocuments) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -506,12 +522,43 @@ export function AppShell({
             {announce}
           </div>
           <div className="message-list">
-            {messages.length === 0 && (
+            {documentsLoadError && (
+              <div className="inline-alert" role="alert">
+                <AlertTriangle className="inline h-4 w-4" aria-hidden />{" "}
+                {documentsLoadError}
+              </div>
+            )}
+            {!documentsLoadError && !hasDocuments && (
+              <div className="empty-chat">
+                <h2 className="text-xl font-semibold">
+                  Add documentation before asking questions
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
+                  GroundStack answers only from uploaded documentation. An
+                  authorized administrator should upload an approved technical
+                  document, wait for it to finish processing, then return here
+                  to ask a supported question.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    className="button button-primary no-underline"
+                    href="/knowledge"
+                  >
+                    Manage documents
+                  </Link>
+                  <Link className="button no-underline" href="/about">
+                    How it works
+                  </Link>
+                </div>
+              </div>
+            )}
+            {messages.length === 0 && hasDocuments && (
               <div className="empty-chat">
                 <h2 className="text-xl font-semibold">Ask from your sources</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
-                  GroundStack will retrieve evidence, stream a LLaMA-backed
-                  answer, and reject unsupported or fabricated citations.
+                  GroundStack will retrieve evidence from uploaded documents,
+                  generate an answer, and show the real sources it used.
+                  Unsupported questions return an insufficient-evidence message.
                 </p>
               </div>
             )}
@@ -569,7 +616,7 @@ export function AppShell({
               }}
               placeholder="Ask a grounded question..."
               className="field composer-field"
-              disabled={loading}
+              disabled={loading || !hasDocuments}
               maxLength={1200}
             />
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -626,7 +673,7 @@ export function AppShell({
                 <button
                   className="button button-primary"
                   type="submit"
-                  disabled={loading || !question.trim()}
+                  disabled={loading || !question.trim() || !hasDocuments}
                 >
                   <Send className="h-4 w-4" aria-hidden />
                   Send

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "GroundStack",
     description:
-      "A portfolio-grade grounded AI assistant with citations and evaluation.",
+      "A portfolio-ready document-grounded AI support app with citations.",
     type: "website",
   },
   alternates: {

@@ -6,15 +6,15 @@ export default function AboutPage() {
   return (
     <AppFrame
       title="Documentation and about"
-      description="A concise guide to how GroundStack retrieves, answers, evaluates, and improves."
+      description="A concise guide to the document-grounded support workflow."
     >
       <div className="landing-grid">
         <section className="section-band">
           <h2 className="section-title">How GroundStack works</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--graphite-strong)]">
             GroundStack ingests project-authored technical documentation, stores
-            immutable document versions, retrieves source chunks with hybrid
-            search, and streams answers that must cite validated evidence.
+            immutable document versions, retrieves relevant source chunks, and
+            streams answers that cite the evidence used.
           </p>
         </section>
         <section className="section-band">
@@ -31,14 +31,16 @@ export default function AboutPage() {
               Anonymous demo users cannot upload, evaluate, train, or change
               settings.
             </li>
-            <li>Feedback-derived training examples require human review.</li>
+            <li>
+              Questions outside the uploaded documents return an
+              insufficient-evidence answer instead of an unsupported claim.
+            </li>
           </ul>
         </section>
         <section className="section-band">
           <h2 className="section-title">Project documentation</h2>
           <div className="mt-3 flex flex-wrap gap-3 text-sm">
             <Link href="/sources">Source inventory</Link>
-            <Link href="/evaluation">Evaluation dashboard</Link>
             <Link href="/settings">Security policy summary</Link>
           </div>
         </section>

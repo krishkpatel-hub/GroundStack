@@ -157,6 +157,21 @@ class KnowledgeRepository:
             options=[selectinload(Document.source), selectinload(Document.chunks)],
         )
 
+    async def delete_document(self, document: Document) -> bool:
+        source = document.source
+        await self.session.delete(document)
+        await self.session.flush()
+
+        remaining = (
+            await self.session.execute(
+                select(func.count(Document.id)).where(Document.source_id == source.id)
+            )
+        ).scalar_one()
+        if int(remaining) == 0:
+            source.status = "deleted"
+            source.last_successfully_ingested_at = None
+        return True
+
     async def list_chunks(
         self, document_id: UUID, *, limit: int, offset: int
     ) -> tuple[int, list[DocumentChunk]]:

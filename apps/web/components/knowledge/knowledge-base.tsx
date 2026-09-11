@@ -1,13 +1,23 @@
 "use client";
 
-import { ChevronDown, ChevronRight, FileUp, RefreshCw } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  FileUp,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppFrame } from "@/components/app-frame";
 import {
+  ACCEPTED_FILE_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
+  deleteDocument,
   fetchDocumentChunks,
   fetchDocuments,
   fetchIngestionJob,
+  friendlyApiError,
   submitKnowledgeUrl,
   uploadKnowledgeFile,
   type DocumentChunk,
@@ -59,6 +69,8 @@ export function KnowledgeBase({
   const [error, setError] = useState<string | null>(null);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [dragActive, setDragActive] = useState(false);
+  const [selectedFileNames, setSelectedFileNames] = useState<string[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<DocumentItem | null>(null);
 
   const loadDocuments = useCallback(
     async (nextOffset = offset) => {
@@ -68,9 +80,7 @@ export function KnowledgeBase({
         setError(null);
       } catch (loadError) {
         setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Could not load documents",
+          friendlyApiError(loadError, "Could not load documents").message,
         );
       } finally {
         setLoadingDocs(false);
@@ -103,15 +113,22 @@ export function KnowledgeBase({
 
   async function acceptFiles(files: FileList | File[]) {
     setError(null);
+    const fileList = Array.from(files);
+    setSelectedFileNames(fileList.map((file) => file.name));
+    const oversized = fileList.find(
+      (file) => file.size > MAX_UPLOAD_SIZE_BYTES,
+    );
+    if (oversized) {
+      setError(`${oversized.name} is larger than the 10 MB upload limit.`);
+      return;
+    }
     try {
       const accepted = await Promise.all(
-        Array.from(files).map((file) => uploadKnowledgeFile(file)),
+        fileList.map((file) => uploadKnowledgeFile(file)),
       );
       setJobs((current) => [...accepted.map(createOptimisticJob), ...current]);
     } catch (uploadError) {
-      setError(
-        uploadError instanceof Error ? uploadError.message : "Upload failed",
-      );
+      setError(friendlyApiError(uploadError, "Upload failed").message);
     }
   }
 
@@ -123,8 +140,26 @@ export function KnowledgeBase({
       setJobs((current) => [createOptimisticJob(job), ...current]);
       setUrl("");
     } catch (urlError) {
+      setError(friendlyApiError(urlError, "URL ingestion failed").message);
+    }
+  }
+
+  async function confirmDeleteDocument() {
+    if (!deleteTarget) return;
+    setError(null);
+    try {
+      await deleteDocument(deleteTarget.id);
+      setDeleteTarget(null);
+      setExpanded((current) => (current === deleteTarget.id ? null : current));
+      setChunks((current) => {
+        const next = { ...current };
+        delete next[deleteTarget.id];
+        return next;
+      });
+      await loadDocuments(Math.max(0, offset - pageSize));
+    } catch (deleteError) {
       setError(
-        urlError instanceof Error ? urlError.message : "URL ingestion failed",
+        friendlyApiError(deleteError, "Document deletion failed").message,
       );
     }
   }
@@ -160,7 +195,7 @@ export function KnowledgeBase({
       description={
         mode === "activity"
           ? "Track ingestion jobs, recovery states, and document processing progress."
-          : "Ingest technical sources, monitor processing, and inspect stored document versions and chunks."
+          : "Upload approved technical documents, monitor processing, inspect sources, and remove documents from future answers."
       }
       actions={
         <button
@@ -181,9 +216,10 @@ export function KnowledgeBase({
                 Add knowledge
               </h2>
               <p className="mt-1 text-sm leading-6 text-[var(--graphite)]">
-                Supported formats: Markdown, plain text, HTML, and text-based
-                PDF. URL ingestion accepts only allowlisted public documentation
-                pages.
+                Uploaded documents become the knowledge base used to answer
+                questions. Accepted file types: {ACCEPTED_FILE_TYPES.join(", ")}
+                . Maximum file size: 10 MB. URL ingestion accepts only
+                allowlisted public documentation pages.
               </p>
             </div>
 
@@ -205,6 +241,11 @@ export function KnowledgeBase({
                     <p className="mt-1 text-sm leading-6 text-[var(--graphite)]">
                       Drop files here or choose them from disk.
                     </p>
+                    {selectedFileNames.length > 0 && (
+                      <p className="mt-2 text-sm leading-6 text-[var(--graphite-strong)]">
+                        Selected: {selectedFileNames.join(", ")}
+                      </p>
+                    )}
                   </div>
                   <label className="button button-primary cursor-pointer">
                     <FileUp className="h-4 w-4" aria-hidden />
@@ -342,6 +383,7 @@ export function KnowledgeBase({
                       <th>Chunks</th>
                       <th>Ingested</th>
                       <th>Details</th>
+                      {mode === "admin" && <th>Delete</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -392,13 +434,25 @@ export function KnowledgeBase({
                                     aria-hidden
                                   />
                                 )}
-                                Chunks
+                                Sources
                               </button>
                             </td>
+                            {mode === "admin" && (
+                              <td>
+                                <button
+                                  className="button min-h-9 px-2 py-1"
+                                  type="button"
+                                  onClick={() => setDeleteTarget(document)}
+                                >
+                                  <Trash2 className="h-4 w-4" aria-hidden />
+                                  Delete
+                                </button>
+                              </td>
+                            )}
                           </tr>
                           {isExpanded && (
                             <tr>
-                              <td colSpan={7}>
+                              <td colSpan={mode === "admin" ? 8 : 7}>
                                 <div className="space-y-3 py-2">
                                   {(chunks[document.id]?.items ?? []).map(
                                     (chunk) => (
@@ -490,8 +544,18 @@ export function KnowledgeBase({
                         ) : (
                           <ChevronRight className="h-4 w-4" aria-hidden />
                         )}
-                        Chunks
+                        Sources
                       </button>
+                      {mode === "admin" && (
+                        <button
+                          className="button min-h-9 w-full px-2 py-1"
+                          type="button"
+                          onClick={() => setDeleteTarget(document)}
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden />
+                          Delete document
+                        </button>
+                      )}
                       {isExpanded && (
                         <div className="space-y-3">
                           {(chunks[document.id]?.items ?? []).map((chunk) => (
@@ -545,6 +609,47 @@ export function KnowledgeBase({
           </div>
         </section>
       </div>
+
+      {deleteTarget && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => setDeleteTarget(null)}
+        >
+          <section
+            className="modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-document-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="delete-document-title" className="section-title">
+              Delete document?
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-[var(--graphite)]">
+              This removes <strong>{deleteTarget.title}</strong> and its stored
+              source chunks from future answers. Existing conversation records
+              are not edited.
+            </p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                className="button"
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="button button-danger"
+                type="button"
+                onClick={() => void confirmDeleteDocument()}
+              >
+                Delete document
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </AppFrame>
   );
 }

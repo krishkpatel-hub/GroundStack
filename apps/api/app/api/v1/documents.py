@@ -1,8 +1,9 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
+from app.core.auth import AdminPrincipal
 from app.db.session import async_session_factory
 from app.schemas.ingestion import (
     DocumentChunkResponse,
@@ -107,3 +108,15 @@ async def list_document_chunks(document_id: UUID, params: PaginationDependency):
                 for chunk in chunks
             ],
         )
+
+
+@router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_document(document_id: UUID, _principal: AdminPrincipal):
+    async with async_session_factory() as session:
+        repo = KnowledgeRepository(session)
+        document = await repo.get_document(document_id)
+        if document is None:
+            raise HTTPException(status_code=404, detail="Document not found.")
+        await repo.delete_document(document)
+        await session.commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)

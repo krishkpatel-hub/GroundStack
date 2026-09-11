@@ -10,6 +10,7 @@ import {
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppFrame } from "@/components/app-frame";
+import { WorkspaceNav } from "@/components/workspace-nav";
 import {
   ACCEPTED_FILE_TYPES,
   MAX_UPLOAD_SIZE_BYTES,
@@ -187,15 +188,11 @@ export function KnowledgeBase({
 
   return (
     <AppFrame
-      title={
-        mode === "activity"
-          ? "Ingestion activity"
-          : "Knowledge-base administration"
-      }
+      title={mode === "activity" ? "Ingestion activity" : "Workspace"}
       description={
         mode === "activity"
           ? "Track ingestion jobs, recovery states, and document processing progress."
-          : "Upload approved technical documents, monitor processing, inspect sources, and remove documents from future answers."
+          : "Ask questions and manage the documents GroundStack can use."
       }
       actions={
         <button
@@ -208,18 +205,17 @@ export function KnowledgeBase({
         </button>
       }
     >
+      {mode === "admin" && <WorkspaceNav />}
       <div className="space-y-8">
         {mode === "admin" && (
           <section aria-labelledby="ingestion-heading" className="space-y-4">
             <div>
               <h2 id="ingestion-heading" className="section-title">
-                Add knowledge
+                Knowledge base
               </h2>
               <p className="mt-1 text-sm leading-6 text-[var(--graphite)]">
-                Uploaded documents become the knowledge base used to answer
-                questions. Accepted file types: {ACCEPTED_FILE_TYPES.join(", ")}
-                . Maximum file size: 10 MB. URL ingestion accepts only
-                allowlisted public documentation pages.
+                Accepted file types: {ACCEPTED_FILE_TYPES.join(", ")}. Maximum
+                file size: 10 MB.
               </p>
             </div>
 
@@ -237,7 +233,7 @@ export function KnowledgeBase({
               >
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <h3 className="font-semibold">Upload files</h3>
+                    <h3 className="font-semibold">Upload documents</h3>
                     <p className="mt-1 text-sm leading-6 text-[var(--graphite)]">
                       Drop files here or choose them from disk.
                     </p>
@@ -266,7 +262,7 @@ export function KnowledgeBase({
 
               <div>
                 <label htmlFor="knowledge-url" className="label">
-                  Public documentation URL
+                  Documentation URL
                 </label>
                 <div className="flex gap-2 max-sm:flex-col">
                   <input
@@ -292,7 +288,7 @@ export function KnowledgeBase({
         <section aria-labelledby="activity-heading" className="divider pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="activity-heading" className="section-title">
-              Ingestion activity
+              Processing status
             </h2>
             <span className="text-sm text-[var(--graphite)]" aria-live="polite">
               {jobs.length === 0
@@ -347,7 +343,7 @@ export function KnowledgeBase({
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 id="documents-heading" className="section-title">
-                Document inventory
+                Documents
               </h2>
               <p className="mt-1 text-sm text-[var(--graphite)]">
                 {documents
@@ -362,8 +358,8 @@ export function KnowledgeBase({
 
           {!loadingDocs && documents?.items.length === 0 && (
             <p className="mt-6 max-w-xl text-sm leading-6 text-[var(--graphite)]">
-              No documents have been ingested yet. Upload a supported file or
-              submit an allowlisted documentation URL to begin.
+              No documents yet. Upload a supported file or submit an allowed
+              documentation URL to begin.
             </p>
           )}
 
@@ -381,7 +377,7 @@ export function KnowledgeBase({
                       <th>Version</th>
                       <th>Status</th>
                       <th>Chunks</th>
-                      <th>Ingested</th>
+                      <th>Added</th>
                       <th>Details</th>
                       {mode === "admin" && <th>Delete</th>}
                     </tr>
@@ -395,9 +391,6 @@ export function KnowledgeBase({
                             <td>
                               <div className="max-w-[280px] break-words font-semibold">
                                 {document.title}
-                              </div>
-                              <div className="mono mt-1 truncate text-xs text-[var(--graphite)]">
-                                {document.content_checksum}
                               </div>
                             </td>
                             <td>
@@ -466,7 +459,6 @@ export function KnowledgeBase({
                                             {chunk.heading_path.join(" / ") ||
                                               "Root"}
                                           </span>{" "}
-                                          - {chunk.token_count} tokens
                                         </div>
                                         <p className="mt-1 line-clamp-5 whitespace-pre-wrap text-sm leading-6">
                                           {chunk.content}
@@ -499,9 +491,6 @@ export function KnowledgeBase({
                         <h3 className="break-words font-semibold">
                           {document.title}
                         </h3>
-                        <div className="mono mt-1 break-all text-xs text-[var(--graphite)]">
-                          {document.content_checksum}
-                        </div>
                       </div>
                       <dl className="document-facts">
                         <div>
@@ -527,7 +516,7 @@ export function KnowledgeBase({
                           <dd>{document.chunk_count}</dd>
                         </div>
                         <div>
-                          <dt>Ingested</dt>
+                          <dt>Added</dt>
                           <dd>
                             {new Date(document.ingested_at).toLocaleString()}
                           </dd>
@@ -568,7 +557,6 @@ export function KnowledgeBase({
                                 <span className="break-words">
                                   {chunk.heading_path.join(" / ") || "Root"}
                                 </span>{" "}
-                                - {chunk.token_count} tokens
                               </div>
                               <p className="mt-1 line-clamp-5 whitespace-pre-wrap text-sm leading-6">
                                 {chunk.content}

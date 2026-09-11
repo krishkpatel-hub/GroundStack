@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BookOpenText,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -18,7 +17,6 @@ import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { BrandMark } from "@/components/brand-mark";
-import { StatusIndicator } from "@/components/status-indicator";
 import { fetchAuthInfo, type AuthInfo } from "@/lib/auth";
 
 type AppFrameProps = {
@@ -30,16 +28,15 @@ type AppFrameProps = {
 
 const publicItems = [
   { href: "/", label: "Overview", icon: Home },
-  { href: "/ask", label: "Ask a question", icon: MessageSquare },
-  { href: "/sources", label: "Sources", icon: BookOpenText },
+  { href: "/ask", label: "Workspace", icon: MessageSquare },
   { href: "/about", label: "How it works", icon: FileText },
 ];
 
 const userItems = [{ href: "/conversations", label: "History", icon: History }];
 
 const adminItems = [
-  { href: "/knowledge", label: "Manage documents", icon: UploadCloud },
-  { href: "/settings", label: "Health and settings", icon: Settings },
+  { href: "/knowledge", label: "Documents", icon: UploadCloud },
+  { href: "/settings", label: "Health", icon: Settings },
 ];
 
 export function AppFrame({
@@ -75,8 +72,7 @@ export function AppFrame({
 
   const navGroups = useMemo(() => {
     const groups = [{ label: "Product", items: publicItems }];
-    if (auth.authenticated)
-      groups.push({ label: "Workspace", items: userItems });
+    if (auth.authenticated) groups.push({ label: "Account", items: userItems });
     if (auth.admin) groups.push({ label: "Administration", items: adminItems });
     return groups;
   }, [auth]);
@@ -168,16 +164,13 @@ export function AppFrame({
 
         <div className="border-t border-[var(--border)] p-3">
           {!collapsed && (
-            <div className="space-y-3">
-              <StatusIndicator />
-              <p className="text-xs leading-5 text-[var(--graphite)]">
-                {auth.admin
-                  ? "Admin controls visible"
-                  : auth.authenticated
-                    ? "Signed-in workspace"
-                    : "Public demo access"}
-              </p>
-            </div>
+            <p className="text-xs leading-5 text-[var(--graphite)]">
+              {auth.admin
+                ? "Admin controls visible"
+                : auth.authenticated
+                  ? "Signed-in workspace"
+                  : "Public demo access"}
+            </p>
           )}
         </div>
       </aside>

@@ -1,4 +1,13 @@
 import { AppShell } from "@/components/app-shell";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Workspace",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AskPage({
   searchParams,

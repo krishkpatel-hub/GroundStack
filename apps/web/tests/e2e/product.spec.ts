@@ -156,16 +156,24 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
   );
 }
 
-test("landing page loads an example question into chat and completes a cited answer", async ({
+test("landing page opens the workspace and completes a cited answer", async ({
   page,
 }) => {
   await mockApi(page, "admin");
   await page.goto("/");
-  await page.getByRole("link", { name: /How do I configure pgvector/ }).click();
   await expect(
-    page.getByRole("heading", { name: "Ask GroundStack" }),
+    page.getByRole("heading", {
+      name: "Ask technical questions. Get answers backed by your documentation.",
+    }),
   ).toBeVisible();
-  await expect(page.getByLabel("Question")).toHaveValue(/pgvector/);
+  await page
+    .getByRole("main")
+    .getByRole("link", { name: "Open workspace" })
+    .click();
+  await expect(page.getByRole("heading", { name: "Workspace" })).toBeVisible();
+  await page
+    .getByLabel("Question")
+    .fill("How do I configure pgvector for GroundStack?");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(
     page.getByText("Run migrations after starting PostgreSQL"),
@@ -184,14 +192,16 @@ test("admin core routes expose source and document-management states", async ({
   page,
 }) => {
   await mockApi(page, "admin");
-  await page.goto("/sources");
+  await page.goto("/ask");
   await expect(
-    page.getByRole("heading", { name: "Sources and citations" }),
-  ).toBeVisible();
-  await expect(page.getByText("GroundStack setup")).toBeVisible();
-  await page.goto("/knowledge");
+    page.getByLabel("Workspace views").getByRole("tab", { name: "Ask" }),
+  ).toHaveAttribute("aria-current", "page");
+  await page
+    .getByLabel("Workspace views")
+    .getByRole("tab", { name: "Documents" })
+    .click();
   await expect(
-    page.getByRole("heading", { name: "Add knowledge" }),
+    page.getByRole("heading", { name: "Knowledge base" }),
   ).toBeVisible();
   await expect(page.getByText("Maximum file size: 10 MB")).toBeVisible();
   await page.getByRole("button", { name: "Delete" }).click();
@@ -204,13 +214,8 @@ test("admin core routes expose source and document-management states", async ({
 test("anonymous navigation hides admin destinations", async ({ page }) => {
   await mockApi(page, "anonymous");
   await page.goto("/");
-  const primaryNav = page.getByLabel("Primary navigation");
-  await expect(
-    primaryNav.getByRole("link", { name: "Manage documents" }),
-  ).toHaveCount(0);
-  await expect(
-    primaryNav.getByRole("link", { name: "Evaluation" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Evaluation" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Training" })).toHaveCount(0);
 });
 
 test("empty database states stay useful", async ({ page }) => {
@@ -218,12 +223,12 @@ test("empty database states stay useful", async ({ page }) => {
   await page.route("**/api/v1/documents?**", (route) =>
     route.fulfill({ json: { total: 0, limit: 20, offset: 0, items: [] } }),
   );
-  await page.goto("/sources");
+  await page.goto("/knowledge");
   await expect(page.getByText("No documents yet")).toBeVisible();
   await page.goto("/ask");
   await expect(
     page.getByRole("heading", {
-      name: "Add documentation before asking questions",
+      name: "Add a document before asking",
     }),
   ).toBeVisible();
   await expect(page.getByLabel("Question")).toBeDisabled();
@@ -246,11 +251,9 @@ test("mobile navigation and axe scan pass the core landing page", async ({
   await mockApi(page, "admin");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await page.getByRole("button", { name: "Open navigation" }).click();
+  await page.getByRole("link", { name: "Open workspace" }).first().click();
   await expect(
-    page
-      .getByLabel("Primary navigation")
-      .getByRole("link", { name: "Ask a question" }),
+    page.getByLabel("Workspace views").getByRole("tab", { name: "Documents" }),
   ).toBeVisible();
   const results = await new AxeBuilder({ page })
     .disableRules(["color-contrast"])
@@ -266,7 +269,7 @@ test("core routes do not emit browser console errors", async ({ page }) => {
   });
   for (const route of ["/", "/ask", "/sources", "/knowledge", "/about"]) {
     await page.goto(route);
-    await page.waitForLoadState("networkidle");
+    await page.getByRole("main").waitFor({ state: "visible" });
   }
   expect(errors).toEqual([]);
 });

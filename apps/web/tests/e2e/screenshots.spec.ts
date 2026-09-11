@@ -100,22 +100,34 @@ async function mockScreens(page: Page) {
   );
 }
 
+async function captureAppScreenshot(page: Page, path: string) {
+  await page.evaluate(() => {
+    document
+      .querySelectorAll(
+        "nextjs-portal, [data-nextjs-devtools], [data-nextjs-dialog-overlay]",
+      )
+      .forEach((element) => element.remove());
+  });
+  await page.screenshot({ path, fullPage: true });
+}
+
 test("capture portfolio screenshots", async ({ page }) => {
+  test.skip(
+    test.info().project.name !== "chromium-desktop",
+    "Portfolio screenshots are captured once from the desktop Chromium project.",
+  );
   await mockScreens(page);
   await page.goto("/");
-  await page.screenshot({ path: `${out}/landing.png`, fullPage: true });
+  await captureAppScreenshot(page, `${out}/landing.png`);
   await page.goto("/ask?q=How%20do%20I%20configure%20pgvector%3F");
   await page.getByRole("button", { name: "Send" }).click();
   await page.getByText("Run migrations after starting PostgreSQL").waitFor();
-  await page.screenshot({
-    path: `${out}/chat-with-citations.png`,
-    fullPage: true,
-  });
+  await captureAppScreenshot(page, `${out}/chat-with-citations.png`);
   await page.getByRole("button", { name: "[S1]" }).click();
-  await page.screenshot({ path: `${out}/source-viewer.png`, fullPage: true });
+  await captureAppScreenshot(page, `${out}/source-viewer.png`);
   await page.goto("/knowledge");
-  await page.screenshot({ path: `${out}/knowledge-admin.png`, fullPage: true });
+  await captureAppScreenshot(page, `${out}/knowledge-admin.png`);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ask?q=How%20do%20I%20configure%20pgvector%3F");
-  await page.screenshot({ path: `${out}/mobile-chat.png`, fullPage: true });
+  await captureAppScreenshot(page, `${out}/mobile-chat.png`);
 });

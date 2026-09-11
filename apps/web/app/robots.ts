@@ -5,9 +5,10 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/about", "/ask", "/discord/privacy", "/discord/terms"],
+        allow: ["/", "/about", "/discord/privacy", "/discord/terms"],
         disallow: [
           "/activity",
+          "/ask",
           "/conversations",
           "/discord",
           "/evaluation",

@@ -21,6 +21,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { AppFrame } from "@/components/app-frame";
+import { WorkspaceNav } from "@/components/workspace-nav";
 import {
   fetchConversationMessages,
   fetchConversations,
@@ -393,8 +394,8 @@ export function AppShell({
 
   return (
     <AppFrame
-      title="Ask GroundStack"
-      description="Ask grounded questions, inspect cited source passages, and keep conversation history under your own account."
+      title="Workspace"
+      description="Ask questions and manage the documents GroundStack can use."
       actions={
         <button className="button" type="button" onClick={startNewConversation}>
           <MessageSquarePlus className="h-4 w-4" aria-hidden />
@@ -402,6 +403,7 @@ export function AppShell({
         </button>
       }
     >
+      <WorkspaceNav />
       <div className="chat-grid">
         <aside className="conversation-panel" aria-label="Conversation history">
           <div className="flex items-center justify-between gap-2">
@@ -531,13 +533,11 @@ export function AppShell({
             {!documentsLoadError && !hasDocuments && (
               <div className="empty-chat">
                 <h2 className="text-xl font-semibold">
-                  Add documentation before asking questions
+                  Add a document before asking
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
-                  GroundStack answers only from uploaded documentation. An
-                  authorized administrator should upload an approved technical
-                  document, wait for it to finish processing, then return here
-                  to ask a supported question.
+                  The knowledge base is empty. Add an approved document, then
+                  ask a question from this workspace.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
@@ -554,11 +554,12 @@ export function AppShell({
             )}
             {messages.length === 0 && hasDocuments && (
               <div className="empty-chat">
-                <h2 className="text-xl font-semibold">Ask from your sources</h2>
+                <h2 className="text-xl font-semibold">
+                  Ask your knowledge base
+                </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
-                  GroundStack will retrieve evidence from uploaded documents,
-                  generate an answer, and show the real sources it used.
-                  Unsupported questions return an insufficient-evidence message.
+                  Ask a question and review the sources returned with the
+                  answer.
                 </p>
               </div>
             )}
@@ -614,7 +615,7 @@ export function AppShell({
                   void submitChat();
                 }
               }}
-              placeholder="Ask a grounded question..."
+              placeholder="Ask a question about your documents..."
               className="field composer-field"
               disabled={loading || !hasDocuments}
               maxLength={1200}
@@ -841,11 +842,8 @@ function SourcePanel({
         <p className="mt-4 whitespace-pre-wrap rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--canvas)] p-3 text-sm leading-6">
           {citation.excerpt || "No excerpt was returned for this citation."}
         </p>
-        <Link
-          className="button mt-4 no-underline"
-          href={`/sources?document=${citation.document_id}`}
-        >
-          Open source inventory
+        <Link className="button mt-4 no-underline" href="/knowledge">
+          Open documents
         </Link>
       </section>
     </div>

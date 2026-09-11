@@ -2,21 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://groundstack.example.com"),
   title: {
-    default: "GroundStack",
+    default: "GroundStack | Source-backed technical answers",
     template: "%s | GroundStack",
   },
-  description: "Grounded answers for developer communities",
+  description:
+    "Ask questions against approved technical documentation and inspect the sources supporting every answer.",
   applicationName: "GroundStack",
   openGraph: {
-    title: "GroundStack",
+    title: "GroundStack | Source-backed technical answers",
     description:
-      "A portfolio-ready document-grounded AI support app with citations.",
+      "Ask questions against approved technical documentation and inspect the sources supporting every answer.",
     type: "website",
-  },
-  alternates: {
-    canonical: "/",
   },
 };
 

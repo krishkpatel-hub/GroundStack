@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlertTriangle,
   CheckCircle2,
   FileText,
   LoaderCircle,
@@ -122,18 +121,7 @@ function KnowledgeBaseStatus() {
     );
   }
 
-  if (state.kind === "error") {
-    return (
-      <span
-        className="status-label status-danger min-w-0"
-        title={state.message}
-        aria-live="polite"
-      >
-        <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-        Service unavailable
-      </span>
-    );
-  }
+  if (state.kind === "error") return null;
 
   return (
     <span

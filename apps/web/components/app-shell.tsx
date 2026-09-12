@@ -477,7 +477,6 @@ export function AppShell({
         chatError instanceof Error
           ? generationFailureMessage
           : "Answer generation failed";
-      setError(message);
       setStage("Failed");
       setAnnounce("Generation failed. No answer was saved for this attempt.");
       setMessages((current) =>

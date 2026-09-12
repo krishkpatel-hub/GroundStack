@@ -333,12 +333,10 @@ test("provider failure does not render raw errors as cited answers", async ({
     .click();
   await page.getByRole("button", { name: "Send" }).click();
   await expect(
-    page
-      .getByText(
-        "GroundStack could not generate an answer. Retry after the provider recovers.",
-      )
-      .first(),
-  ).toBeVisible();
+    page.getByText(
+      "GroundStack could not generate an answer. Retry after the provider recovers.",
+    ),
+  ).toHaveCount(1);
   await expect(page.getByText("fake http_500")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "[S1]" })).toHaveCount(0);
   await expect(

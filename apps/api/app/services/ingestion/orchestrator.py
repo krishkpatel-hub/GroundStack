@@ -152,6 +152,11 @@ class IngestionOrchestrator:
                 )
             except Exception as exc:
                 await session.rollback()
+                failure_message = (
+                    str(exc)
+                    if isinstance(exc, IngestionError)
+                    else "Document processing failed unexpectedly."
+                )
                 async with async_session_factory() as failure_session:
                     failure_repo = KnowledgeRepository(failure_session)
                     failure_job = await failure_repo.get_job(job_id)
@@ -168,7 +173,7 @@ class IngestionOrchestrator:
                             },
                             error={
                                 "category": category,
-                                "message": str(exc),
+                                "message": failure_message,
                                 "details": safe_details,
                             },
                         )

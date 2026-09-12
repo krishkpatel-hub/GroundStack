@@ -51,16 +51,12 @@ def main() -> int:
             "trusted hosts",
             bool(os.getenv("TRUSTED_HOSTS")) and "*" not in os.getenv("TRUSTED_HOSTS", ""),
         ),
-        check("metrics token present", bool(os.getenv("METRICS_INTERNAL_TOKEN"))),
         check("migration history", command_ok([sys.executable, "scripts/check_migrations.py"])),
         check("no local secret files", no_secret_files()),
     ]
     database_url = os.getenv("DATABASE_URL")
-    redis_url = os.getenv("REDIS_URL")
     if database_url:
         checks.append(check("database tcp", tcp_ok(database_url)))
-    if redis_url:
-        checks.append(check("redis tcp", tcp_ok(redis_url)))
     return 0 if all(checks) else 1
 
 

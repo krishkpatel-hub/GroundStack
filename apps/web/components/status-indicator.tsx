@@ -83,28 +83,11 @@ export function StatusIndicator() {
             Searchable chunks: {state.status.retrieval.searchable_chunks}
           </div>
         )}
-        {state.status.retrieval && (
-          <div>
-            Reranking:{" "}
-            {state.status.retrieval.reranking_enabled ? "Enabled" : "Disabled"}
-          </div>
-        )}
         {state.status.llm && (
           <div>
             LLM: {state.status.llm.provider}/{state.status.llm.model}{" "}
             {state.status.llm.model_available ? "ready" : "unavailable"}
           </div>
-        )}
-        {state.status.llm && (
-          <div>
-            Model: {state.status.llm.model_variant}
-            {state.status.llm.adapter_name
-              ? ` (${state.status.llm.adapter_name} ${state.status.llm.adapter_version ?? ""})`
-              : ""}
-          </div>
-        )}
-        {state.status.llm && (
-          <div>Promotion: {state.status.llm.promotion_status}</div>
         )}
         <div>Environment: {state.status.environment}</div>
       </div>

@@ -15,9 +15,6 @@ class Settings(BaseSettings):
     database_direct_url: str = ""
     db_ssl_required: bool = False
     db_pool_size: int = Field(default=5, ge=1, le=20)
-    redis_url: str = ""
-    redis_timeout_seconds: float = Field(default=1.5, gt=0, le=10)
-    redis_key_namespace: str = "groundstack"
     cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     public_api_base_url: str = "http://localhost:8000"
     embedding_provider: str = "sentence_transformers"
@@ -30,22 +27,11 @@ class Settings(BaseSettings):
     max_ingestion_file_size_bytes: int = 10 * 1024 * 1024
     url_ingestion_allowed_domains: list[str] = []
     max_retrieval_query_length: int = 1200
-    vector_candidate_limit: int = 40
-    lexical_candidate_limit: int = 40
-    rrf_k: int = 60
-    vector_rrf_weight: float = 1.0
-    lexical_rrf_weight: float = 1.0
-    rerank_candidate_limit: int = 20
-    retrieval_final_top_k: int = 8
-    retrieval_max_top_k: int = 20
-    max_chunks_per_source: int = 3
-    retrieval_algorithm_version: str = "hybrid-rrf-ce-v1"
-    reranker_provider: str = "sentence_transformers"
-    reranker_model_name: str = "cross-encoder/ms-marco-MiniLM-L6-v2"
-    reranker_batch_size: int = 16
-    reranker_device: str = "auto"
-    reranking_enabled: bool = True
-    retrieval_min_reranker_score: float = -5.0
+    retrieval_candidate_limit: int = Field(default=20, ge=1, le=100)
+    retrieval_final_top_k: int = Field(default=5, ge=1, le=20)
+    retrieval_max_top_k: int = Field(default=8, ge=1, le=20)
+    retrieval_max_vector_distance: float = Field(default=0.45, gt=0, le=2)
+    retrieval_algorithm_version: str = "semantic-vector-v1"
     persist_retrieval_queries: bool = False
     retrieval_debug_enabled: bool = True
     retrieval_timeout_seconds: float = 30.0
@@ -66,14 +52,6 @@ class Settings(BaseSettings):
     fake_llm_total_tokens: int = Field(default=80, ge=1, le=4096)
     fake_llm_failure_mode: str = Field(default="none")
     llm_max_concurrent_requests: int | None = Field(default=None, ge=1, le=32)
-    llm_model_variant: str = "base"
-    llm_adapter_name: str = ""
-    llm_adapter_version: str = ""
-    llm_dataset_version: str = ""
-    llm_model_manifest_checksum: str = ""
-    llm_evaluation_status: str = "not_evaluated"
-    llm_promotion_status: str = "created"
-    tokenizer_model_name: str = ""
     store_generation_prompts: bool = False
     generation_prompt_version: str = "grounded_answer/v1"
     max_conversation_history_messages: int = Field(default=8, ge=0, le=30)
@@ -83,11 +61,6 @@ class Settings(BaseSettings):
     generation_concurrency: int = Field(default=2, ge=1, le=32)
     retrieval_concurrency: int = Field(default=4, ge=1, le=64)
     model_queue_timeout_seconds: float = Field(default=3.0, ge=0.05, le=60.0)
-    metrics_enabled: bool = True
-    metrics_internal_token: str = ""
-    evaluation_admin_enabled: bool = False
-    otel_tracing_enabled: bool = False
-    otlp_endpoint: str = ""
     oidc_issuer_url: str = ""
     oidc_client_id: str = ""
     oidc_client_secret: str = ""
@@ -111,24 +84,8 @@ class Settings(BaseSettings):
     demo_max_context_tokens: int = Field(default=2500, ge=500, le=12000)
     demo_provider_failure_threshold: int = Field(default=5, ge=1, le=100)
     demo_provider_failure_window_seconds: int = Field(default=300, ge=30, le=3600)
-    demo_redis_required: bool = False
     demo_upload_limit_bytes: int = Field(default=0, ge=0)
     demo_max_conversations: int = Field(default=5, ge=1, le=50)
-    discord_integration_enabled: bool = False
-    discord_application_id: str = ""
-    discord_public_key: str = ""
-    discord_bot_token: str = ""
-    discord_interaction_token_encryption_key: str = ""
-    discord_identity_hmac_key: str = ""
-    discord_signature_tolerance_seconds: int = Field(default=300, ge=30, le=900)
-    discord_default_retention_days: int = Field(default=30, ge=1, le=365)
-    discord_max_question_length: int = Field(default=600, ge=20, le=2000)
-    discord_queue_ttl_seconds: int = Field(default=900, ge=60, le=3600)
-    discord_worker_batch_size: int = Field(default=5, ge=1, le=25)
-    discord_worker_max_retries: int = Field(default=2, ge=0, le=5)
-    discord_response_base_url: str = "https://discord.com/api/v10"
-    discord_full_answer_base_url: str = ""
-    discord_allow_dms: bool = False
     dev_auth_bypass_enabled: bool = True
     trusted_hosts: list[str] = ["localhost", "127.0.0.1", "testserver", "test"]
     trusted_proxy_hosts: list[str] = []
@@ -180,7 +137,6 @@ class Settings(BaseSettings):
                     "OIDC_ISSUER_URL": self.oidc_issuer_url,
                     "OIDC_CLIENT_ID": self.oidc_client_id,
                     "OIDC_AUDIENCE": self.oidc_audience,
-                    "METRICS_INTERNAL_TOKEN": self.metrics_internal_token,
                 }.items()
                 if not value
             ]
@@ -213,24 +169,6 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Demo OpenAI-compatible inference requires LLM_BASE_URL, "
                     "LLM_API_KEY, and LLM_MODEL."
-                )
-        if self.discord_integration_enabled:
-            missing_discord = [
-                name
-                for name, value in {
-                    "DISCORD_APPLICATION_ID": self.discord_application_id,
-                    "DISCORD_PUBLIC_KEY": self.discord_public_key,
-                    "DISCORD_BOT_TOKEN": self.discord_bot_token,
-                    "DISCORD_INTERACTION_TOKEN_ENCRYPTION_KEY": (
-                        self.discord_interaction_token_encryption_key
-                    ),
-                    "DISCORD_IDENTITY_HMAC_KEY": self.discord_identity_hmac_key,
-                }.items()
-                if not value
-            ]
-            if missing_discord:
-                raise ValueError(
-                    "Discord integration is enabled but missing: " + ", ".join(missing_discord)
                 )
         if self.app_env == "test" and self.llm_provider not in {"fake", "ollama"}:
             raise ValueError(

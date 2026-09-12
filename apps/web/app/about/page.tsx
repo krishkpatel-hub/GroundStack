@@ -28,8 +28,7 @@ export default function AboutPage() {
               grounded.
             </li>
             <li>
-              Anonymous demo users cannot upload, evaluate, train, or change
-              settings.
+              Document administration is available only to authorized users.
             </li>
             <li>
               Questions outside the uploaded documents return an
@@ -40,7 +39,7 @@ export default function AboutPage() {
         <section className="section-band">
           <h2 className="section-title">Project documentation</h2>
           <div className="mt-3 flex flex-wrap gap-3 text-sm">
-            <Link href="/sources">Source inventory</Link>
+            <Link href="/knowledge">Manage documents</Link>
             <Link href="/settings">Security policy summary</Link>
           </div>
         </section>

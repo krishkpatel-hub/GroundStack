@@ -59,31 +59,3 @@ class FeedbackResponse(BaseModel):
     client_request_id: str
     created_at: datetime
     updated_at: datetime
-
-
-class TrainingCandidateResponse(BaseModel):
-    id: UUID
-    message_id: UUID
-    feedback_id: UUID | None
-    status: str
-    proposed_question: str
-    evidence_snapshot: list[dict[str, object]]
-    proposed_answer: str
-    citation_references: list[str]
-    redaction_status: str
-    provenance_status: str
-    reviewer_notes: str | None
-    reviewer_identifier: str | None
-    dataset_export_status: str
-    created_at: datetime
-    reviewed_at: datetime | None
-
-
-class TrainingCandidateUpdateRequest(BaseModel):
-    status: str | None = Field(default=None, pattern="^(pending|approved|rejected)$")
-    proposed_question: str | None = Field(default=None, max_length=4000)
-    proposed_answer: str | None = Field(default=None, max_length=8000)
-    redaction_status: str | None = Field(default=None, pattern="^(pending|approved|rejected)$")
-    provenance_status: str | None = Field(default=None, pattern="^(pending|approved|rejected)$")
-    reviewer_notes: str | None = Field(default=None, max_length=2000)
-    reviewer_identifier: str | None = Field(default=None, max_length=120)

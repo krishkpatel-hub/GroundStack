@@ -29,7 +29,16 @@ export type ConversationMessage = {
   prompt_version: string | null;
   token_usage: Record<string, unknown> | null;
   failure: Record<string, unknown> | null;
-  citations: string[];
+  citations: Citation[];
+  feedback: {
+    rating: "positive" | "negative";
+    categories: string[];
+    comment: string | null;
+    suggested_correction: string | null;
+    citations_incorrect: boolean;
+    reported_citation_ids: string[];
+    client_request_id: string;
+  } | null;
   created_at: string;
   completed_at: string | null;
 };

@@ -7,7 +7,6 @@ from app.services.ai.types import (
     GenerationRequest,
     GenerationResult,
     LLMHealth,
-    RetrievalCandidate,
     RetrievalQuery,
     RetrievalResult,
 )
@@ -42,12 +41,4 @@ class EmbeddingProvider(ABC):
 class Retriever(ABC):
     @abstractmethod
     async def retrieve(self, query: RetrievalQuery) -> RetrievalResult:
-        raise NotImplementedError
-
-
-class Reranker(ABC):
-    @abstractmethod
-    async def rerank(
-        self, query: RetrievalQuery, candidates: list[RetrievalCandidate]
-    ) -> list[RetrievalCandidate]:
         raise NotImplementedError

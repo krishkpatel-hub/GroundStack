@@ -28,8 +28,8 @@ export function ApiConnectionAlert({
           <details className="dev-details">
             <summary>Development details</summary>
             <p>
-              Expected local API: <code>http://localhost:8000</code>. Start
-              FastAPI and PostgreSQL with the documented local commands.
+              Start FastAPI and PostgreSQL with <code>make dev</code>, then use
+              Retry connection.
             </p>
           </details>
         </div>

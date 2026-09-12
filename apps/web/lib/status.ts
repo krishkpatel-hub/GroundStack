@@ -9,9 +9,7 @@ export type SystemStatus = {
   };
   retrieval?: {
     algorithm_version: string;
-    reranking_enabled: boolean;
     vector_index_available: boolean;
-    text_search_index_available: boolean;
     searchable_sources: number;
     searchable_chunks: number;
   };
@@ -22,13 +20,6 @@ export type SystemStatus = {
     model_available: boolean;
     loaded: boolean | null;
     detail: string;
-    model_variant: string;
-    adapter_name: string | null;
-    adapter_version: string | null;
-    dataset_version: string | null;
-    model_manifest_checksum: string | null;
-    evaluation_status: string;
-    promotion_status: string;
   };
 };
 

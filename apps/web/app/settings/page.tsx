@@ -3,31 +3,24 @@ import { AppFrame } from "@/components/app-frame";
 const settings = [
   [
     "Authentication",
-    "Production uses provider-neutral OIDC with Authorization Code and PKCE.",
+    "Document management is enforced by the API and requires an administrator identity.",
   ],
   [
-    "Demo access",
-    "Anonymous demo chat is quota-limited and cannot mutate the knowledge base.",
+    "Local development",
+    "The documented development identity is available only when APP_ENV=development.",
   ],
   [
     "Knowledge base",
     "The current corpus is shared and admin-managed, not tenant-isolated.",
   ],
-  [
-    "Feedback",
-    "Feedback can create training candidates, but review is required before export.",
-  ],
-  [
-    "Observability",
-    "Detailed metrics require an internal token or admin access.",
-  ],
+  ["Feedback", "Helpful and not-helpful ratings are stored with the answer."],
 ];
 
 export default function SettingsPage() {
   return (
     <AppFrame
-      title="Model and system settings"
-      description="Review runtime controls and production-hardening decisions. Configuration changes are handled through deployment environment variables."
+      title="System settings"
+      description="Review the security and data boundaries used by this workspace."
     >
       <section className="section-band">
         <h2 className="section-title">Operational policy</h2>
@@ -54,10 +47,9 @@ export default function SettingsPage() {
       <section className="section-band mt-6">
         <h2 className="section-title">Unavailable from the browser</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--graphite)]">
-          Provider credentials, model endpoint secrets, database URLs, and
-          metrics tokens are intentionally not exposed to the frontend. Use
-          deployment configuration and the documented runbooks for operational
-          changes.
+          Provider credentials, model endpoint secrets, and database URLs are
+          intentionally not exposed to the frontend. Use local environment
+          configuration for operational changes.
         </p>
       </section>
     </AppFrame>

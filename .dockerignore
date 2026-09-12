@@ -6,8 +6,11 @@
 **/__pycache__
 **/.pytest_cache
 **/.ruff_cache
-**/.next/cache
+**/.next
 **/node_modules
+**/coverage
+**/playwright-report
+**/test-results
 apps/api/dev-data/retrieval-results
 evaluation/reports
 load/reports

@@ -212,7 +212,7 @@ export function KnowledgeBase({
       description={
         mode === "activity"
           ? "Track ingestion jobs, recovery states, and document processing progress."
-          : "Northstar Systems fictional demo workspace for approved technical-support documentation."
+          : "Add and manage the approved documents GroundStack can use as evidence."
       }
       requireAdmin
       actions={
@@ -226,18 +226,18 @@ export function KnowledgeBase({
         </button>
       }
     >
-      {mode === "admin" && <WorkspaceNav />}
+      {mode === "admin" && <WorkspaceNav documentCount={documents?.total} />}
       <div className="space-y-8">
         {mode === "admin" && (
           <section aria-labelledby="ingestion-heading" className="space-y-4">
             <div className="demo-workspace-note">
               <div>
-                <p className="eyebrow">Fictional demo workspace</p>
-                <h2>Northstar Systems support corpus</h2>
+                <p className="eyebrow">Organization knowledge base</p>
+                <h2>Start with approved documentation</h2>
                 <p>
-                  These documents are original fictional examples for a private
-                  technical-support assistant. They are not customer material
-                  and do not represent production usage.
+                  Upload only material your organization is authorized to
+                  process. GroundStack uses Ready documents as evidence and
+                  refuses questions the knowledge base cannot support.
                 </p>
               </div>
             </div>

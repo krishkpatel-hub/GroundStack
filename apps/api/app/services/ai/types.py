@@ -91,17 +91,9 @@ class RetrievalCandidate(BaseModel):
     chunk_checksum: str
     vector_rank: int | None = None
     vector_distance: float | None = None
-    lexical_rank: int | None = None
-    lexical_score: float | None = None
-    rrf_score: float | None = None
-    reranker_score: float | None = None
     final_rank: int | None = None
     selected: bool = False
     exclusion_reason: str | None = None
-
-
-FusedCandidate = RetrievalCandidate
-RerankedCandidate = RetrievalCandidate
 
 
 class Citation(BaseModel):
@@ -124,13 +116,7 @@ class RetrievalTrace(BaseModel):
     query_hash: str
     query_length: int
     vector_candidate_count: int = 0
-    lexical_candidate_count: int = 0
-    fused_candidate_count: int = 0
-    reranked_candidate_count: int = 0
     final_result_count: int = 0
-    reranking_applied: bool = False
-    reranking_mode: Literal["enabled", "disabled", "degraded"] = "disabled"
-    degraded_mode: dict[str, str] | None = None
     latency_ms: dict[str, float] = Field(default_factory=dict)
 
 
@@ -139,8 +125,6 @@ class RetrievalResult(BaseModel):
     normalized_query: str
     result_count: int
     evidence_found: bool
-    reranking_applied: bool
-    degraded_mode: dict[str, str] | None = None
     applied_filters: RetrievalFilters
     citations: list[Citation]
     candidates: list[RetrievalCandidate] = Field(default_factory=list)

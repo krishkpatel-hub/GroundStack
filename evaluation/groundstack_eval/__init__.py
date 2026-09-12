@@ -1,1 +1,0 @@
-"""Deterministic GroundStack evaluation helpers."""

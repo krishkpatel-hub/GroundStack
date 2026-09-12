@@ -15,7 +15,7 @@ from app.schemas.ingestion import (
 from app.services.ingestion.orchestrator import IngestionOrchestrator
 from app.services.ingestion.persistence import KnowledgeRepository
 from app.services.ingestion.sources import file_input_from_bytes, url_input
-from app.services.ingestion.types import IngestionError
+from app.services.ingestion.types import IngestionError, SourceValidationError
 
 router = APIRouter(prefix="/ingestions", tags=["ingestions"])
 UploadFileDependency = Annotated[UploadFile, File(...)]
@@ -64,11 +64,14 @@ async def ingest_file(
         if total > max_size:
             raise HTTPException(status_code=413, detail="File exceeds maximum ingestion size.")
         chunks.append(chunk)
-    payload = file_input_from_bytes(
-        content=b"".join(chunks),
-        filename=file.filename or "uploaded-document",
-        content_type=file.content_type,
-    )
+    try:
+        payload = file_input_from_bytes(
+            content=b"".join(chunks),
+            filename=file.filename or "uploaded-document",
+            content_type=file.content_type,
+        )
+    except SourceValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     orchestrator = IngestionOrchestrator()
     job_id = await orchestrator.create_job()
     background_tasks.add_task(_run_ingestion, job_id, payload)

@@ -1,44 +1,22 @@
 # AI Security Review
 
-Version: `1.0.0-rc.1`  
-Review date: 2026-08-24
+Reviewed August 19, 2026 against the
+[OWASP GenAI LLM Top 10 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/)
+as current guidance. This was a scoped review of GroundStack's implemented document-grounded
+workflow; it is not a claim of complete compliance.
 
-Current guidance checked: [OWASP GenAI LLM Top 10 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/),
-released August 3, 2026. Historical 2025 mappings are retained only for tests and controls that were
-originally written against the 2025 category model.
-
-This review is a release-candidate audit, not a certification or complete compliance claim.
-
-## Findings
-
-| Area | Status | Evidence |
+| Risk area | GroundStack control | Remaining limitation |
 | --- | --- | --- |
-| Prompt injection | Mitigated | Prompt templates isolate instructions; retrieved text is evidence only; eval suite includes prompt-injection/security cases. |
-| Citation spoofing | Mitigated | `validate_answer_citations` rejects missing, malformed, fabricated, or unsupported citations. |
-| Unsupported answers | Mitigated | Empty evidence returns deterministic insufficient-evidence answer without LLM call. |
-| System prompt disclosure | Partially mitigated | No route returns prompts; prompt persistence disabled by default. Provider sees prompts by design. |
-| Sensitive data in outputs | Partially mitigated | No default private corpus; `.env` ignored; shared admin corpus means admins must not ingest private material into public demo. |
-| Training data poisoning | Partially mitigated | Training candidates require human review; Discord data is never training eligible. |
-| Excessive agency | Mitigated | LLM has no tool-calling authority or external side effects. |
-| Discord abuse | Mitigated | Slash commands only, no Message Content intent, Ed25519 signature verification, replay protection, HMAC user IDs. |
-| Unbounded consumption | Partially mitigated | Max question/body sizes, demo limits, provider concurrency, load profile safety gates. |
-| Provider failure handling | Partially mitigated | Provider errors become visible failed messages; hosted-provider load tests require explicit opt-in. |
+| Prompt injection | Evidence is delimited as untrusted content; model output has no tool access | A model can still produce poor text |
+| Sensitive information disclosure | Bounded excerpts, secret exclusions, no full prompt logging by default | Hosted providers receive selected excerpts |
+| Supply chain | Locked JavaScript dependencies, Python audits, pinned CI actions, container builds | Dependency advisories change over time |
+| Data and model poisoning | Only administrators can add approved documents | No automated provenance authority |
+| Improper output handling | Markdown is rendered with controlled links; citations are validated | New renderers require review |
+| Excessive agency | The model cannot execute tools or mutate external systems | Administrators can still upload harmful content |
+| System prompt leakage | System prompts and secrets are server-side | Provider behavior is not a secrecy boundary |
+| Vector and embedding weaknesses | Active-document filters, dimension checks, explicit distance threshold | Threshold requires corpus-specific evaluation |
+| Misinformation | Unsupported questions abstain; source excerpts are inspectable | Citations reduce, but do not eliminate, hallucination |
+| Unbounded consumption | Body, question, token, concurrency, and rate limits | Single-instance counters are not distributed |
 
-## Regression Tests
-
-- `apps/api/tests/generation/test_grounding.py`
-- `apps/api/tests/generation/test_fake_provider.py`
-- `apps/api/tests/discord/test_security.py`
-- `apps/api/tests/discord/test_replay.py`
-- `apps/api/tests/discord/test_training_exclusion.py`
-- `apps/api/tests/ingestion/test_url_security.py`
-- `evaluation/runners/run_eval.py --suite all`
-
-These tests cover concrete GroundStack controls and preserve earlier 2025-category mappings where
-applicable. They do not prove complete coverage of every 2026 OWASP GenAI LLM risk.
-
-## Release Decision
-
-No P0 or P1 AI-security release blocker was identified in the local audit. The most important
-deferred risk is tenant isolation: GroundStack has a shared admin-managed knowledge base, so it
-should not be marketed as a multi-tenant product without additional authorization boundaries.
+Relevant tests cover prompt construction, fabricated citations, insufficient evidence,
+authorization, URL safety, malformed files, and provider failures.

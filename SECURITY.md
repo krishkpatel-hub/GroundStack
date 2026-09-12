@@ -11,7 +11,6 @@ Report suspected vulnerabilities privately to the repository owner. Do not open 
 - Authentication or authorization bypasses.
 - Prompt-injection paths involving private data.
 - Deployment or infrastructure weaknesses.
-- Discord signature, replay, or token-handling issues.
 
 Never include access tokens, cookies, API keys, source documents, private prompts, or real user data
 in reports.
@@ -19,12 +18,10 @@ in reports.
 ## Supported Security Boundaries
 
 - Provider-neutral OIDC and demo-mode auth boundaries.
-- Admin-only ingestion, evaluation, training review, and settings routes.
+- Admin-only document ingestion, source inspection, deletion, and settings routes.
 - Scoped conversation and feedback ownership.
 - Prompt-injection and citation-validation controls.
 - Strict URL ingestion allowlist and private-IP rejection.
-- Discord Ed25519 signature verification, replay protection, encrypted interaction-token queueing,
-  HMAC user identifiers, and training-data exclusion.
 - Exact CORS/trusted-host requirements in demo/production modes.
 
 ## Known Limits

@@ -28,7 +28,7 @@ PaginationDependency = Annotated[PaginationParams, Depends(pagination)]
 
 
 @router.get("", response_model=PaginatedDocumentsResponse)
-async def list_documents(params: PaginationDependency):
+async def list_documents(params: PaginationDependency, _principal: AdminPrincipal):
     async with async_session_factory() as session:
         total, documents = await KnowledgeRepository(session).list_documents(
             limit=params.limit, offset=params.offset
@@ -57,7 +57,7 @@ async def list_documents(params: PaginationDependency):
 
 
 @router.get("/{document_id}", response_model=DocumentDetailResponse)
-async def get_document(document_id: UUID):
+async def get_document(document_id: UUID, _principal: AdminPrincipal):
     async with async_session_factory() as session:
         document = await KnowledgeRepository(session).get_document(document_id)
         if document is None:
@@ -80,7 +80,9 @@ async def get_document(document_id: UUID):
 
 
 @router.get("/{document_id}/chunks", response_model=PaginatedChunksResponse)
-async def list_document_chunks(document_id: UUID, params: PaginationDependency):
+async def list_document_chunks(
+    document_id: UUID, params: PaginationDependency, _principal: AdminPrincipal
+):
     async with async_session_factory() as session:
         repo = KnowledgeRepository(session)
         if await repo.get_document(document_id) is None:

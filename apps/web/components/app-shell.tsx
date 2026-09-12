@@ -60,6 +60,13 @@ type LocalMessage = {
   groundingStatus?: string | null;
   citations: Citation[];
   citationIds: string[];
+  feedback?: {
+    rating: FeedbackRating;
+    categories: FeedbackCategory[];
+    comment: string;
+    suggestedCorrection: string;
+    clientRequestId: string;
+  } | null;
 };
 
 type StreamStage =
@@ -71,13 +78,10 @@ type StreamStage =
   | "Stopped"
   | "Failed";
 
-const demoQuestions = [
-  "What does DB-104 mean, and how should I resolve it?",
-  "How do I configure the company VPN?",
-  "What should I do before rolling back a failed deployment?",
-  "When should an incident be classified as severity one?",
-  "How do I request access to the analytics database?",
-  "What is Northstar Systems' parental-leave policy?",
+const exampleQuestions = [
+  "What does the error code in this document mean?",
+  "What steps should I follow to resolve the issue?",
+  "What should I verify before completing this procedure?",
 ] as const;
 
 const activeConversationStorageKey = "groundstack.activeConversationId";
@@ -117,6 +121,7 @@ export function AppShell({
   const citationButtonRef = useRef<HTMLButtonElement | null>(null);
   const restoredConversationRef = useRef(false);
   const submitInFlightRef = useRef(false);
+  const followResponseRef = useRef(true);
 
   const loading =
     stage === "Retrieving evidence" || stage === "Generating answer";
@@ -183,10 +188,29 @@ export function AppShell({
   }, []);
 
   useEffect(() => {
-    if (stage === "Completed" || stage === "Failed") {
+    if (
+      (stage === "Completed" || stage === "Failed") &&
+      followResponseRef.current
+    ) {
       bottomRef.current?.scrollIntoView({ block: "nearest" });
     }
   }, [stage]);
+
+  useEffect(() => {
+    let previousScrollY = window.scrollY;
+    const stopFollowingOnUpwardScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (loading && currentScrollY < previousScrollY - 4) {
+        followResponseRef.current = false;
+      }
+      previousScrollY = currentScrollY;
+    };
+    window.addEventListener("scroll", stopFollowingOnUpwardScroll, {
+      passive: true,
+    });
+    return () =>
+      window.removeEventListener("scroll", stopFollowingOnUpwardScroll);
+  }, [loading]);
 
   useEffect(() => {
     if (!initialQuestion) return;
@@ -268,8 +292,20 @@ export function AppShell({
             content: row.content,
             status: row.status === "completed" ? "completed" : "failed",
             groundingStatus: row.grounding_status,
-            citations: [],
-            citationIds: row.citations,
+            citations: row.citations,
+            citationIds: row.citations.map((citation) => citation.citation_id),
+            feedback: row.feedback
+              ? {
+                  rating: row.feedback.rating,
+                  categories: row.feedback.categories.filter(
+                    (category): category is FeedbackCategory =>
+                      feedbackCategories.includes(category as FeedbackCategory),
+                  ),
+                  comment: row.feedback.comment ?? "",
+                  suggestedCorrection: row.feedback.suggested_correction ?? "",
+                  clientRequestId: row.feedback.client_request_id,
+                }
+              : null,
           })),
       );
     } catch (loadError) {
@@ -329,6 +365,9 @@ export function AppShell({
     if (!trimmed || loading || submitInFlightRef.current || !hasDocuments)
       return;
     submitInFlightRef.current = true;
+    followResponseRef.current =
+      window.innerHeight + window.scrollY >=
+      document.documentElement.scrollHeight - 160;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -464,7 +503,7 @@ export function AppShell({
   return (
     <AppFrame
       title="Workspace"
-      description="Northstar Systems fictional demo workspace for approved technical-support documentation."
+      description="Ask questions against approved organizational documentation and inspect the supporting evidence."
       actions={
         <button className="button" type="button" onClick={startNewConversation}>
           <MessageSquarePlus className="h-4 w-4" aria-hidden />
@@ -472,7 +511,7 @@ export function AppShell({
         </button>
       }
     >
-      <WorkspaceNav />
+      <WorkspaceNav documentCount={documents.length} />
       <div className="chat-grid">
         <aside className="conversation-panel" aria-label="Conversation history">
           <div className="flex items-center justify-between gap-2">
@@ -595,15 +634,17 @@ export function AppShell({
           <div className="message-list">
             <section
               className="demo-workspace-note"
-              aria-labelledby="northstar-demo-title"
+              aria-labelledby="workspace-purpose-title"
             >
               <div>
-                <p className="eyebrow">Fictional demo workspace</p>
-                <h2 id="northstar-demo-title">Northstar Systems support</h2>
+                <p className="eyebrow">Approved knowledge only</p>
+                <h2 id="workspace-purpose-title">
+                  Grounded answers with inspectable sources
+                </h2>
                 <p>
-                  This local demo uses original fictional support documents.
-                  GroundStack should answer only from the approved corpus and
-                  show source excerpts for review.
+                  GroundStack answers from documents an administrator has added
+                  to this knowledge base. Review the cited excerpts before
+                  relying on an answer.
                 </p>
               </div>
               <Link className="button no-underline" href="/knowledge">
@@ -644,24 +685,24 @@ export function AppShell({
                   Ask your knowledge base
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
-                  Try one of the Northstar demo questions, or ask your own
-                  question about the seeded support documents.
+                  Ask a specific question about an uploaded document, or use an
+                  example below as a starting point.
                 </p>
                 <div
                   className="suggestion-grid mt-4"
                   aria-label="Example questions"
                 >
-                  {demoQuestions.map((demoQuestion) => (
+                  {exampleQuestions.map((exampleQuestion) => (
                     <button
-                      key={demoQuestion}
+                      key={exampleQuestion}
                       className="suggestion-button"
                       type="button"
                       onClick={() => {
-                        setQuestion(demoQuestion);
+                        setQuestion(exampleQuestion);
                         setAnnounce("Example question filled");
                       }}
                     >
-                      {demoQuestion}
+                      {exampleQuestion}
                     </button>
                   ))}
                 </div>
@@ -961,17 +1002,24 @@ function SourcePanel({
 }
 
 function FeedbackControls({ message }: { message: LocalMessage }) {
-  const [rating, setRating] = useState<FeedbackRating | null>(null);
-  const [categories, setCategories] = useState<FeedbackCategory[]>([]);
-  const [comment, setComment] = useState("");
-  const [correction, setCorrection] = useState("");
+  const [rating, setRating] = useState<FeedbackRating | null>(
+    message.feedback?.rating ?? null,
+  );
+  const [categories, setCategories] = useState<FeedbackCategory[]>(
+    message.feedback?.categories ?? [],
+  );
+  const [comment, setComment] = useState(message.feedback?.comment ?? "");
+  const [correction, setCorrection] = useState(
+    message.feedback?.suggestedCorrection ?? "",
+  );
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState(Boolean(message.feedback));
   const [error, setError] = useState<string | null>(null);
   const clientRequestId = useMemo(
     () =>
+      message.feedback?.clientRequestId ??
       `feedback-${message.id}-${globalThis.crypto?.randomUUID?.() ?? "local"}`,
-    [message.id],
+    [message.feedback?.clientRequestId, message.id],
   );
 
   function toggleCategory(category: FeedbackCategory) {

@@ -4,7 +4,8 @@ export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30_000,
   expect: { timeout: 8_000 },
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
   use: {
@@ -14,7 +15,8 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1 --port 3005",
+    command:
+      "npm run build && npm run start -- --hostname 127.0.0.1 --port 3005",
     url: "http://127.0.0.1:3005",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

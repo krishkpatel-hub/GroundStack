@@ -4,7 +4,7 @@ services:
     runtime: docker
     plan: free
     repo: https://github.com/krishkpatel-hub/GroundStack
-    branch: deploy/simplified-live-demo
+    branch: main
     dockerfilePath: apps/api/Dockerfile
     dockerContext: .
     healthCheckPath: /api/v1/health/live
@@ -20,8 +20,6 @@ services:
         value: "true"
       - key: DEMO_CHAT_ENABLED
         value: "true"
-      - key: DEMO_REDIS_REQUIRED
-        value: "false"
       - key: DEMO_REQUEST_LIMIT_PER_MINUTE
         value: "4"
       - key: DEMO_DAILY_QUESTION_LIMIT
@@ -70,11 +68,7 @@ services:
         value: "2"
       - key: LLM_MAX_RETRIES
         value: "1"
-      - key: METRICS_INTERNAL_TOKEN
-        generateValue: true
-      - key: DISCORD_INTEGRATION_ENABLED
-        value: "false"
-      - key: DISCORD_ALLOW_DMS
-        value: "false"
-      - key: DISCORD_DEFAULT_RETENTION_DAYS
-        value: "30"
+      - key: RETRIEVAL_ALGORITHM_VERSION
+        value: semantic-vector-v1
+      - key: RETRIEVAL_MAX_VECTOR_DISTANCE
+        value: "0.45"

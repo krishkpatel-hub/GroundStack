@@ -1,4 +1,4 @@
-FROM python:3.14.2-slim-bookworm AS runtime
+FROM python:3.12.12-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -13,9 +13,9 @@ COPY apps/api/app /app/app
 COPY apps/api/migrations /app/migrations
 COPY apps/api/alembic.ini /app/alembic.ini
 COPY scripts /app/scripts
-COPY docs/demo-corpus /app/docs/demo-corpus
 
 RUN pip install --upgrade pip \
+    && pip install --index-url https://download.pytorch.org/whl/cpu torch \
     && pip install .
 
 USER groundstack

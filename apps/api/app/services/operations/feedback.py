@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.conversation import Message, MessageFeedback, TrainingCandidate
+from app.models.conversation import Message, MessageFeedback
 from app.schemas.feedback import FeedbackRequest
 
 
@@ -51,6 +50,7 @@ class FeedbackRepository:
                 client_request_id=request.client_request_id,
                 owner_subject=owner_subject,
                 message_snapshot=message_snapshot(message),
+                training_eligible=False,
             )
             self.session.add(feedback)
         feedback.rating = request.rating
@@ -85,53 +85,3 @@ class FeedbackRepository:
         await self.session.delete(feedback)
         await self.session.flush()
         return True
-
-    async def create_candidate(self, *, feedback: MessageFeedback) -> TrainingCandidate:
-        message = await self.session.get(Message, feedback.message_id)
-        if message is None:
-            raise FeedbackError("Message no longer exists.")
-        row = await self.session.execute(
-            select(TrainingCandidate).where(
-                TrainingCandidate.message_id == message.id,
-                TrainingCandidate.feedback_id == feedback.id,
-            )
-        )
-        existing = row.scalar_one_or_none()
-        if existing:
-            return existing
-        if feedback.source_platform == "discord" or not feedback.training_eligible:
-            raise FeedbackError("Discord feedback is not eligible for training data.")
-        candidate = TrainingCandidate(
-            message_id=message.id,
-            feedback_id=feedback.id,
-            proposed_question="",
-            evidence_snapshot=[],
-            proposed_answer=feedback.suggested_correction or message.content,
-            citation_references=feedback.reported_citation_ids,
-            redaction_status="pending",
-            provenance_status="pending",
-            source_platform=feedback.source_platform,
-            training_eligible=feedback.training_eligible,
-        )
-        self.session.add(candidate)
-        await self.session.flush()
-        return candidate
-
-    async def approve_candidate(
-        self, *, candidate_id: UUID, reviewer_identifier: str, notes: str | None
-    ) -> TrainingCandidate:
-        candidate = await self.session.get(TrainingCandidate, candidate_id)
-        if candidate is None:
-            raise FeedbackError("Training candidate not found.")
-        if candidate.source_platform == "discord" or not candidate.training_eligible:
-            raise FeedbackError("Discord data cannot be approved for training.")
-        if candidate.redaction_status != "approved" or candidate.provenance_status != "approved":
-            raise FeedbackError(
-                "Candidate requires approved redaction and provenance before approval."
-            )
-        candidate.status = "approved"
-        candidate.reviewer_identifier = reviewer_identifier
-        candidate.reviewer_notes = notes
-        candidate.reviewed_at = datetime.now(UTC)
-        await self.session.flush()
-        return candidate

@@ -1,1 +1,1 @@
-"""Explicit hybrid retrieval services for GroundStack."""
+"""Semantic vector retrieval services for GroundStack."""

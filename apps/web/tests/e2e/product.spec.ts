@@ -8,7 +8,11 @@ const documentId = "33333333-3333-3333-3333-333333333333";
 async function mockApi(
   page: Page,
   role: "anonymous" | "admin" = "admin",
-  options: { onChatStream?: () => void; failGeneration?: boolean } = {},
+  options: {
+    onChatStream?: () => void;
+    failGeneration?: boolean;
+    persistedFeedback?: boolean;
+  } = {},
 ) {
   await page.route("**/api/v1/auth/me", (route) =>
     route.fulfill({
@@ -43,7 +47,7 @@ async function mockApi(
       json: [
         {
           id: conversationId,
-          title: "Demo: DB-104 support",
+          title: "Presentation validation",
           archived: false,
           created_at: "2026-08-19T12:00:00Z",
           updated_at: "2026-08-19T12:10:00Z",
@@ -62,7 +66,7 @@ async function mockApi(
             conversation_id: conversationId,
             role: "user",
             status: "completed",
-            content: "What does DB-104 mean?",
+            content: "What does GS-DEMO-217 mean?",
             grounding_status: null,
             retrieval_run_id: null,
             generation_run_id: null,
@@ -72,9 +76,60 @@ async function mockApi(
             token_usage: null,
             failure: null,
             citations: [],
+            feedback: null,
             created_at: "2026-08-19T12:00:00Z",
             completed_at: "2026-08-19T12:00:00Z",
           },
+          ...(options.persistedFeedback
+            ? [
+                {
+                  id: messageId,
+                  conversation_id: conversationId,
+                  role: "assistant",
+                  status: "completed",
+                  content:
+                    "GS-DEMO-217 identifies a configuration revision mismatch. [S1]",
+                  grounding_status: "grounded",
+                  retrieval_run_id: null,
+                  generation_run_id: null,
+                  provider: "fake",
+                  model: "deterministic",
+                  prompt_version: "test",
+                  token_usage: null,
+                  failure: null,
+                  citations: [
+                    {
+                      citation_id: "S1",
+                      source_id: "44444444-4444-4444-4444-444444444444",
+                      document_id: documentId,
+                      document_version: 1,
+                      chunk_id: "55555555-5555-5555-5555-555555555555",
+                      title: "GroundStack Presentation Validation Document",
+                      source_display_name:
+                        "groundstack-presentation-validation.md",
+                      source_type: "file",
+                      source_uri: null,
+                      section_path: "Meaning",
+                      page_number: null,
+                      excerpt:
+                        "GS-DEMO-217 means the validation worker could not confirm the active configuration revision.",
+                      final_rank: 1,
+                    },
+                  ],
+                  feedback: {
+                    rating: "positive",
+                    categories: [],
+                    comment: null,
+                    suggested_correction: null,
+                    citations_incorrect: false,
+                    reported_citation_ids: [],
+                    client_request_id: "feedback-persisted",
+                  },
+                  created_at: "2026-08-19T12:00:01Z",
+                  completed_at: "2026-08-19T12:00:01Z",
+                },
+              ]
+            : []),
         ],
       }),
   );
@@ -95,10 +150,10 @@ async function mockApi(
             id: documentId,
             source_id: "44444444-4444-4444-4444-444444444444",
             source_type: "file",
-            display_name: "04-db-104.md",
+            display_name: "groundstack-presentation-validation.md",
             source_status: "active",
             version: 1,
-            title: "Northstar Systems Database Error DB-104",
+            title: "GroundStack Presentation Validation Document",
             mime_type: "text/markdown",
             content_checksum: "demo-checksum",
             chunk_count: 2,
@@ -121,7 +176,7 @@ async function mockApi(
             position: 1,
             heading_path: ["Meaning"],
             content:
-              "DB-104 means the application connected to the database host but failed the schema readiness check.",
+              "GS-DEMO-217 means the validation worker could not confirm the active configuration revision.",
             token_count: 12,
             chunk_checksum: "chunk",
             embedding_model: "demo",
@@ -141,7 +196,7 @@ async function mockApi(
     options.onChatStream?.();
     const body = route.request().postDataJSON() as { question?: string };
     const unsupported = body.question?.includes("parental-leave");
-    const citationEvent = `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"Northstar Systems Database Error DB-104","source_display_name":"04-db-104.md","source_type":"file","source_uri":null,"section_path":"Meaning","page_number":null,"excerpt":"DB-104 means the application connected to the database host but failed the schema readiness check.","final_rank":1}]}\n\n`;
+    const citationEvent = `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"GroundStack Presentation Validation Document","source_display_name":"groundstack-presentation-validation.md","source_type":"file","source_uri":null,"section_path":"Meaning","page_number":null,"excerpt":"GS-DEMO-217 means the validation worker could not confirm the active configuration revision.","final_rank":1}]}\n\n`;
     return route.fulfill({
       headers: { "content-type": "text/event-stream" },
       body: [
@@ -161,8 +216,8 @@ async function mockApi(
               ]
             : [
                 `event: generation_started\ndata: {}\n\n`,
-                `event: token\ndata: {"token":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]"}\n\n`,
-                `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]","grounding_status":"grounded"}\n\n`,
+                `event: token\ndata: {"token":"GS-DEMO-217 means the validation worker could not confirm the active configuration revision. Refresh configuration, restart the worker, and confirm validation_status=ready. [S1]"}\n\n`,
+                `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"GS-DEMO-217 means the validation worker could not confirm the active configuration revision. Refresh configuration, restart the worker, and confirm validation_status=ready. [S1]","grounding_status":"grounded"}\n\n`,
                 `event: completed\ndata: {}\n\n`,
               ]),
       ].join(""),
@@ -189,7 +244,7 @@ test("landing page opens the workspace and completes a cited answer", async ({
       name: "A private technical-support assistant for approved documentation.",
     }),
   ).toBeVisible();
-  await expect(page.getByText("Northstar Systems is fictional")).toBeVisible();
+  await expect(page.getByText("GroundStack portfolio project")).toBeVisible();
   const workspaceLink = page
     .getByRole("main")
     .getByRole("link", { name: "Open workspace" });
@@ -197,29 +252,48 @@ test("landing page opens the workspace and completes a cited answer", async ({
   await page.goto("/ask");
   await expect(page.getByRole("heading", { name: "Workspace" })).toBeVisible();
   await expect(
-    page.getByText("Fictional demo workspace", { exact: true }),
+    page.getByText("Approved knowledge only", { exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", {
-      name: "What does DB-104 mean, and how should I resolve it?",
+      name: "What does the error code in this document mean?",
     })
     .click();
   await page
     .getByRole("textbox", { name: "Question" })
-    .fill("What does DB-104 mean, and how should I resolve it?");
+    .fill("What does GS-DEMO-217 mean, and how should I resolve it?");
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByText("schema readiness check")).toBeVisible();
+  await expect(
+    page.getByText("validation worker could not confirm"),
+  ).toBeVisible();
   await page.getByRole("button", { name: "[S1]" }).click();
   await expect(
     page.getByRole("dialog", { name: "Source evidence" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Northstar Systems Database Error DB-104"),
+    page.getByText("GroundStack Presentation Validation Document"),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
   await page.getByRole("button", { name: "Helpful" }).click();
   await expect(page.getByText("Saved")).toBeVisible();
+});
+
+test("saved feedback is restored with conversation history", async ({
+  page,
+}) => {
+  await mockApi(page, "admin", { persistedFeedback: true });
+  await page.addInitScript((id) => {
+    window.localStorage.setItem("groundstack.activeConversationId", id);
+  }, conversationId);
+  await page.goto("/ask");
+  const helpful = page.getByRole("button", { name: "Helpful" });
+  await expect(helpful).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Saved")).toBeVisible();
+  await page.getByRole("button", { name: "[S1]" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Source evidence" }),
+  ).toContainText("GS-DEMO-217 means the validation worker");
 });
 
 test("chat submission is guarded against rapid duplicate sends", async ({
@@ -235,12 +309,14 @@ test("chat submission is guarded against rapid duplicate sends", async ({
   await page
     .getByLabel("Example questions")
     .getByRole("button", {
-      name: "What does DB-104 mean, and how should I resolve it?",
+      name: "What does the error code in this document mean?",
     })
     .click();
   const send = page.getByRole("button", { name: "Send" });
   await Promise.all([send.dispatchEvent("click"), send.dispatchEvent("click")]);
-  await expect(page.getByText("schema readiness check")).toBeVisible();
+  await expect(
+    page.getByText("validation worker could not confirm"),
+  ).toBeVisible();
   expect(chatRequests).toBe(1);
 });
 
@@ -252,7 +328,7 @@ test("provider failure does not render raw errors as cited answers", async ({
   await page
     .getByLabel("Example questions")
     .getByRole("button", {
-      name: "What does DB-104 mean, and how should I resolve it?",
+      name: "What does the error code in this document mean?",
     })
     .click();
   await page.getByRole("button", { name: "Send" }).click();
@@ -270,16 +346,12 @@ test("provider failure does not render raw errors as cited answers", async ({
   ).toBeVisible();
 });
 
-test("northstar unsupported question returns insufficient evidence", async ({
-  page,
-}) => {
+test("unsupported question returns insufficient evidence", async ({ page }) => {
   await mockApi(page, "admin");
   await page.goto("/ask");
   await page
-    .getByRole("button", {
-      name: "What is Northstar Systems' parental-leave policy?",
-    })
-    .click();
+    .getByRole("textbox", { name: "Question" })
+    .fill("What is the parental-leave policy?");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(
     page.getByText("I do not have enough retrieved evidence"),
@@ -303,7 +375,7 @@ test("admin core routes expose source and document-management states", async ({
     page.getByRole("heading", { name: "Knowledge base" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Northstar Systems support corpus"),
+    page.getByText("Start with approved documentation"),
   ).toBeVisible();
   await expect(page.getByText("Maximum file size: 10 MB")).toBeVisible();
   await page.getByRole("button", { name: "Delete" }).click();
@@ -340,8 +412,7 @@ test("document upload rejects unsupported file types before submission", async (
 test("anonymous navigation hides admin destinations", async ({ page }) => {
   await mockApi(page, "anonymous");
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Evaluation" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Training" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Documents" })).toHaveCount(0);
   await page.goto("/ask");
   await expect(
     page.getByLabel("Workspace views").getByRole("tab", { name: "Documents" }),
@@ -388,9 +459,7 @@ test("mobile navigation and axe scan pass the core landing page", async ({
   await expect(
     page.getByLabel("Workspace views").getByRole("tab", { name: "Documents" }),
   ).toBeVisible();
-  const results = await new AxeBuilder({ page })
-    .disableRules(["color-contrast"])
-    .analyze();
+  const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
 });
 
@@ -398,9 +467,16 @@ test("core workspace routes avoid horizontal overflow at reviewed widths", async
   page,
 }) => {
   await mockApi(page, "admin");
-  for (const width of [320, 375, 768, 1024, 1440]) {
+  for (const width of [320, 375, 430, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const route of ["/", "/ask", "/knowledge", "/sources"]) {
+    for (const route of [
+      "/",
+      "/ask",
+      "/knowledge",
+      "/conversations",
+      "/settings",
+      "/about",
+    ]) {
       await page.goto(route);
       await page.getByRole("main").waitFor({ state: "visible" });
       const overflow = await page.evaluate(
@@ -417,9 +493,38 @@ test("core routes do not emit browser console errors", async ({ page }) => {
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
-  for (const route of ["/", "/ask", "/sources", "/knowledge", "/about"]) {
+  page.on("response", (response) => {
+    if (response.status() >= 400) {
+      errors.push(`${response.status()} ${response.url()}`);
+    }
+  });
+  for (const route of [
+    "/",
+    "/ask",
+    "/knowledge",
+    "/conversations",
+    "/settings",
+    "/about",
+  ]) {
     await page.goto(route);
     await page.getByRole("main").waitFor({ state: "visible" });
   }
   expect(errors).toEqual([]);
+});
+
+test("workspace reflows at a 200 percent zoom equivalent", async ({ page }) => {
+  await mockApi(page, "admin");
+  await page.setViewportSize({ width: 640, height: 900 });
+  await page.goto("/ask");
+  await page.evaluate(() => {
+    document.documentElement.style.zoom = "2";
+  });
+  const overflow = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth -
+      document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+  await expect(page.getByRole("textbox", { name: "Question" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
 });

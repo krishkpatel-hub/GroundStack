@@ -1,4 +1,4 @@
-from app.services.ai.interfaces import EmbeddingProvider, LLMProvider, Reranker, Retriever
+from app.services.ai.interfaces import EmbeddingProvider, LLMProvider, Retriever
 from app.services.ai.types import (
     ChatMessage,
     EmbeddingRequest,
@@ -20,5 +20,4 @@ __all__ = [
     "RetrievalQuery",
     "RetrievalResult",
     "Retriever",
-    "Reranker",
 ]

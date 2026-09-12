@@ -8,7 +8,6 @@ import {
   submitKnowledgeUrl,
   validateKnowledgeFile,
 } from "@/lib/knowledge";
-import { searchRetrieval } from "@/lib/retrieval";
 
 describe("knowledge API utilities", () => {
   it("fetches paginated documents", async () => {
@@ -75,38 +74,5 @@ describe("knowledge API utilities", () => {
     expect(documentStatusLabel("skipped")).toBe("Already imported");
     expect(documentStatusLabel("queued")).toBe("Processing");
     expect(documentStatusLabel("failed")).toBe("Failed");
-  });
-
-  it("submits retrieval search with filters", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        retrieval_run_id: "run",
-        normalized_query: "database",
-        result_count: 0,
-        evidence_found: false,
-        reranking_applied: false,
-        degraded_mode: null,
-        applied_filters: {
-          source_types: ["file"],
-          source_ids: [],
-          document_ids: [],
-        },
-        citations: [],
-        timings_ms: { total: 1 },
-        debug: null,
-      }),
-    }) as unknown as typeof fetch;
-
-    await searchRetrieval({
-      query: "database",
-      top_k: 8,
-      filters: { source_types: ["file"], source_ids: [], document_ids: [] },
-    });
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:8000/api/v1/retrieval/search",
-      expect.objectContaining({ method: "POST" }),
-    );
   });
 });

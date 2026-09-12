@@ -18,7 +18,7 @@ type KnowledgeState =
   | { kind: "ready"; count: number }
   | { kind: "error"; message: string };
 
-export function WorkspaceNav() {
+export function WorkspaceNav({ documentCount }: { documentCount?: number }) {
   const pathname = usePathname();
   const [canManageDocuments, setCanManageDocuments] = useState(false);
   const active = pathname.startsWith("/knowledge") ? "documents" : "ask";
@@ -69,7 +69,7 @@ export function WorkspaceNav() {
           />
         )}
       </div>
-      <KnowledgeBaseStatus />
+      <KnowledgeBaseStatus documentCount={documentCount} />
     </div>
   );
 }
@@ -101,10 +101,12 @@ function WorkspaceTab({
   );
 }
 
-function KnowledgeBaseStatus() {
+function KnowledgeBaseStatus({ documentCount }: { documentCount?: number }) {
   const [state, setState] = useState<KnowledgeState>({ kind: "loading" });
 
   useEffect(() => {
+    if (documentCount !== undefined) return;
+
     const controller = new AbortController();
     fetchDocuments(100, 0)
       .then((page) => {
@@ -122,9 +124,14 @@ function KnowledgeBaseStatus() {
         }
       });
     return () => controller.abort();
-  }, []);
+  }, [documentCount]);
 
-  if (state.kind === "loading") {
+  const displayedState: KnowledgeState =
+    documentCount === undefined
+      ? state
+      : { kind: "ready", count: documentCount };
+
+  if (displayedState.kind === "loading") {
     return (
       <span className="status-label" aria-live="polite">
         <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
@@ -133,17 +140,17 @@ function KnowledgeBaseStatus() {
     );
   }
 
-  if (state.kind === "error") return null;
+  if (displayedState.kind === "error") return null;
 
   return (
     <span
-      className={`status-label ${state.count > 0 ? "status-success" : "status-warning"}`}
+      className={`status-label ${displayedState.count > 0 ? "status-success" : "status-warning"}`}
       aria-live="polite"
     >
       <CheckCircle2 className="h-4 w-4" aria-hidden />
-      {state.count === 0
+      {displayedState.count === 0
         ? "No documents"
-        : `${state.count} document${state.count === 1 ? "" : "s"} ready`}
+        : `${displayedState.count} document${displayedState.count === 1 ? "" : "s"} ready`}
     </span>
   );
 }

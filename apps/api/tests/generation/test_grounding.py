@@ -55,7 +55,6 @@ def _retrieval(candidates: list[RetrievalCandidate]) -> RetrievalResult:
         normalized_query="How do I inspect Postgres?",
         result_count=len(citations),
         evidence_found=bool(citations),
-        reranking_applied=False,
         applied_filters=RetrievalFilters(),
         citations=citations,
         candidates=candidates,

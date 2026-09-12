@@ -17,12 +17,12 @@ export const metadata: Metadata = {
 
 const steps = [
   [
-    "Seed or upload approved docs",
-    "The demo uses fictional Northstar Systems support documentation.",
+    "Upload approved documents",
+    "An authorized administrator adds the policies, procedures, or technical guides the organization trusts.",
   ],
   [
-    "Ask a support question",
-    "Employees ask about VPN, access, incidents, deployments, and API issues.",
+    "Ask a question",
+    "A user asks in plain language and GroundStack searches the approved knowledge base for relevant evidence.",
   ],
   [
     "Review source evidence",
@@ -48,13 +48,9 @@ export default function Home() {
             A private technical-support assistant for approved documentation.
           </h1>
           <p>
-            GroundStack demonstrates how employees can ask operational support
-            questions and get answers grounded in a controlled knowledge base,
-            with citations that reviewers can inspect.
-          </p>
-          <p className="demo-disclaimer">
-            Demo workspace: Northstar Systems is fictional and uses original
-            synthetic documentation. No customer usage is claimed.
+            GroundStack helps people find reliable answers in an
+            organization&apos;s approved documents, with citations they can
+            inspect before acting.
           </p>
           <div className="public-actions">
             <Link className="button button-primary no-underline" href="/ask">
@@ -89,8 +85,8 @@ export default function Home() {
           <h2 id="sources-title">Source-backed answers</h2>
           <p>
             GroundStack separates generated answers from source evidence. If the
-            Northstar demo corpus does not cover a question, the assistant
-            should say it lacks enough evidence instead of inventing a policy.
+            uploaded documents do not cover a question, the assistant says it
+            lacks enough evidence instead of inventing an answer.
           </p>
         </section>
       </main>

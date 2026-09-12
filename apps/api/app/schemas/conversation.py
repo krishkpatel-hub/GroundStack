@@ -24,6 +24,16 @@ class ConversationResponse(BaseModel):
     last_message_at: datetime | None
 
 
+class MessageFeedbackSummary(BaseModel):
+    rating: str
+    categories: list[str] = Field(default_factory=list)
+    comment: str | None
+    suggested_correction: str | None
+    citations_incorrect: bool
+    reported_citation_ids: list[str] = Field(default_factory=list)
+    client_request_id: str
+
+
 class MessageResponse(BaseModel):
     id: UUID
     conversation_id: UUID
@@ -38,7 +48,8 @@ class MessageResponse(BaseModel):
     prompt_version: str | None
     token_usage: dict[str, object] | None
     failure: dict[str, object] | None
-    citations: list[str] = Field(default_factory=list)
+    citations: list[CitationResponse] = Field(default_factory=list)
+    feedback: MessageFeedbackSummary | None = None
     created_at: datetime
     completed_at: datetime | None
 

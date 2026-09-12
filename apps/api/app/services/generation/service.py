@@ -12,7 +12,7 @@ from app.services.generation.context import ApproximateTokenCounter, build_conte
 from app.services.generation.persistence import ConversationRepository
 from app.services.generation.prompts import load_prompt_template, render_user_prompt
 from app.services.operations.metrics import metrics
-from app.services.retrieval.service import HybridRetriever
+from app.services.retrieval.service import SemanticRetriever
 
 
 @dataclass
@@ -33,7 +33,7 @@ class GroundedAnswerService:
     def __init__(self) -> None:
         self.settings = get_settings()
         self.llm_provider = get_llm_provider()
-        self.retriever = HybridRetriever()
+        self.retriever = SemanticRetriever()
 
     async def answer(
         self,

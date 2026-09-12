@@ -176,7 +176,7 @@ export function AppFrame({
                 ? "Admin controls visible"
                 : auth.authenticated
                   ? "Signed-in workspace"
-                  : "Public demo access"}
+                  : "Guest access"}
             </p>
           )}
         </div>
@@ -218,7 +218,7 @@ export function AppFrame({
               <h2 className="text-xl font-semibold">Admin access required</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
                 Document management is available only to administrators. You can
-                still ask questions from approved demo documentation.
+                still ask questions from approved documentation.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link

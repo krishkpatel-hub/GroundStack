@@ -12,14 +12,13 @@ from app.schemas.system import (
     KnowledgeCounts,
     LLMStatus,
     ReadinessResponse,
-    RerankerStatus,
     RetrievalStatus,
     SystemStatusResponse,
 )
 from app.services.ai.embeddings import detect_device
 from app.services.ai.llm import get_llm_provider
 from app.services.ingestion.persistence import KnowledgeRepository
-from app.services.operations.demo_limits import demo_availability, redis_connectivity_ok
+from app.services.operations.demo_limits import demo_availability
 from app.services.retrieval.repository import RetrievalRepository
 
 router = APIRouter(tags=["system"])
@@ -37,12 +36,10 @@ async def live() -> HealthResponse:
 
 @router.get("/health/ready", response_model=ReadinessResponse)
 async def ready() -> ReadinessResponse:
-    settings = get_settings()
     checks: dict[str, str] = {}
     database = await check_database()
     checks["database"] = "ok" if database.connected else "unavailable"
-    if settings.demo_redis_required or settings.redis_url:
-        checks["redis"] = "ok" if await redis_connectivity_ok() else "unavailable"
+    settings = get_settings()
     if settings.app_env == "demo":
         try:
             llm = await asyncio.wait_for(get_llm_provider().health(), timeout=1.5)
@@ -70,31 +67,15 @@ async def system_status() -> SystemStatusResponse:
     database = await check_database()
     try:
         llm_health = await asyncio.wait_for(get_llm_provider().health(), timeout=1.5)
-        llm = LLMStatus(
-            **llm_health.model_dump(),
-            model_variant=settings.llm_model_variant,
-            adapter_name=settings.llm_adapter_name or None,
-            adapter_version=settings.llm_adapter_version or None,
-            dataset_version=settings.llm_dataset_version or None,
-            model_manifest_checksum=settings.llm_model_manifest_checksum or None,
-            evaluation_status=settings.llm_evaluation_status,
-            promotion_status=settings.llm_promotion_status,
-        )
-    except Exception as exc:
+        llm = LLMStatus(**llm_health.model_dump())
+    except Exception:
         llm = LLMStatus(
             provider=settings.llm_provider,
             model=settings.llm_model,
             reachable=False,
             model_available=False,
             loaded=None,
-            detail=str(exc) or "LLM provider status check failed.",
-            model_variant=settings.llm_model_variant,
-            adapter_name=settings.llm_adapter_name or None,
-            adapter_version=settings.llm_adapter_version or None,
-            dataset_version=settings.llm_dataset_version or None,
-            model_manifest_checksum=settings.llm_model_manifest_checksum or None,
-            evaluation_status=settings.llm_evaluation_status,
-            promotion_status=settings.llm_promotion_status,
+            detail="LLM provider status check failed.",
         )
     if database.connected:
         async with async_session_factory() as session:
@@ -111,7 +92,7 @@ async def system_status() -> SystemStatusResponse:
             "completed_ingestion_jobs": 0,
             "failed_ingestion_jobs": 0,
         }
-        indexes = {"hnsw": False, "gin": False}
+        indexes = {"hnsw": False}
         searchable = {"searchable_sources": 0, "searchable_chunks": 0}
     return SystemStatusResponse(
         application="online",
@@ -124,18 +105,9 @@ async def system_status() -> SystemStatusResponse:
             device=detect_device(settings.embedding_device),
             loaded=False,
         ),
-        reranker=RerankerStatus(
-            provider=settings.reranker_provider,
-            model=settings.reranker_model_name,
-            device=detect_device(settings.reranker_device),
-            enabled=settings.reranking_enabled,
-            loaded=False,
-        ),
         retrieval=RetrievalStatus(
             algorithm_version=settings.retrieval_algorithm_version,
-            reranking_enabled=settings.reranking_enabled,
             vector_index_available=indexes["hnsw"],
-            text_search_index_available=indexes["gin"],
             searchable_sources=searchable["searchable_sources"],
             searchable_chunks=searchable["searchable_chunks"],
         ),

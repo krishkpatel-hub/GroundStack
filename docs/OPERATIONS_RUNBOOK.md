@@ -1,47 +1,38 @@
 # Operations Runbook
 
-Version: `1.0.0-rc.1`
-
-## Local Development
+## Start And Stop
 
 ```bash
-cp .env.example .env
-make setup
-make db-up
-make migrate
 make dev
+# Ctrl+C when finished
+make db-down
 ```
 
-## Release Verification
+`make dev` starts and waits for PostgreSQL, applies migrations, and runs FastAPI and
+Next.js. `make db-down` stops the database container without deleting its volume.
 
-Run checks conservatively on memory-constrained laptops. Avoid Docker, browser E2E, Ollama, and
-load tests simultaneously.
+## Readiness
 
 ```bash
-make lint
-make typecheck
-make test
-npm run build --workspace apps/web
-python scripts/check_migrations.py
+curl --fail http://localhost:8000/api/v1/health/live
+curl --fail http://localhost:8000/api/v1/health/ready
+docker compose ps
+cd apps/api && .venv/bin/alembic current
 ```
 
-## Demo Deployment
+Process health and dependency readiness are separate. A live API can still report degraded
+readiness when PostgreSQL or the configured provider is unavailable.
 
-Use `deploy/demo-compose.yml` and `deploy/.env.demo.example`. Do not put secrets in repository
-files. Run migrations as a one-off task before starting app containers.
+## Recovery
 
-## Incidents
+- **Docker unavailable:** start Docker Desktop, run `docker info`, then `make dev`.
+- **Database unavailable:** run `docker compose logs postgres`, then `make db-up`.
+- **Migration mismatch:** run `make migrate` and `make migration-check`.
+- **API unavailable:** verify port 8000 is free and run `make api-dev`.
+- **Frontend unavailable:** verify port 3000 is free and run `make web-dev`.
+- **Provider unavailable:** verify the private `LLM_*` configuration and provider health;
+  do not switch to deterministic output for a real presentation.
+- **Document stuck Processing:** inspect the API log by request/job ID, correct the cause, and
+  use the existing Retry action.
 
-- Database outage: restore DB connectivity, verify `/api/v1/health/ready`, then retry failed work.
-- Redis outage: public demo quotas may fail closed when `DEMO_REDIS_REQUIRED=true`.
-- Provider outage: disable demo chat or switch approved provider endpoint; do not fall back to a
-  more expensive provider automatically.
-- Prompt-injection report: quarantine source content, rerun security evals, and inspect generated
-  answers for unsupported claims.
-- Discord incident: disable guild config or `DISCORD_INTEGRATION_ENABLED`, rotate bot token if
-  exposed, and verify interaction-token encryption key handling.
-
-## Backups
-
-Use `scripts/backup_postgres.sh` and `scripts/restore_postgres.sh`. Rollback is redeploying a prior
-image plus forward database repair unless a restore drill has been approved.
+Do not delete database volumes as a routine recovery step.

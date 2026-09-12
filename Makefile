@@ -1,12 +1,10 @@
-.PHONY: setup dev test lint format typecheck db-up db-down migrate migration-check predeploy deploy-check migrate-production seed-demo reset-demo verify-demo-data db-smoke discord-worker-health discord-worker-once discord-commands-json api-dev web-dev eval-retrieval benchmark-retrieval benchmark-import-check benchmark-smoke benchmark-volume-300 benchmark-burst benchmark-soak-short benchmark-ollama benchmark-real-provider failure-test integrity-check capacity-report capacity-cost validate-training-data prepare-training-data training-preflight train-qlora compare-models training-test review-training-candidates export-approved-training-data eval eval-generation eval-security compare-prompts load-smoke-fake load-sustained-fake load-300-real
+.PHONY: setup dev api-dev web-dev test lint typecheck format db-up db-down migrate migration-check predeploy deploy-check migrate-production db-smoke ingest
 
 setup:
 	npm install
 	cd apps/api && python3 -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
 
-dev:
-	$(MAKE) db-up
-	$(MAKE) migrate
+dev: db-up migrate
 	$(MAKE) -j2 api-dev web-dev
 
 api-dev:
@@ -17,11 +15,11 @@ web-dev:
 
 test:
 	cd apps/api && . .venv/bin/activate && pytest
+	npm run test --workspace apps/web
 
 lint:
-	cd apps/api && . .venv/bin/activate && ruff check .
+	cd apps/api && . .venv/bin/activate && ruff format --check . && ruff check .
 	npm run lint --workspace apps/web
-	npm run typecheck --workspace apps/web
 
 typecheck:
 	cd apps/api && . .venv/bin/activate && python -m compileall -q app
@@ -32,7 +30,7 @@ format:
 	npm run format --workspace apps/web
 
 db-up:
-	docker compose up -d postgres
+	docker compose up -d --wait postgres
 
 db-down:
 	docker compose down
@@ -52,113 +50,8 @@ deploy-check:
 migrate-production:
 	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/migrate_production.py
 
-seed-demo:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/seed_demo.py
-
-reset-demo:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/seed_demo.py --reset
-
-verify-demo-data:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/verify_demo_data.py
-
 db-smoke:
 	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/db_smoke.py
 
-discord-worker-health:
-	cd apps/api && . .venv/bin/activate && python -m app.cli.discord_worker --healthcheck
-
-discord-worker-once:
-	cd apps/api && . .venv/bin/activate && python -m app.cli.discord_worker
-
-discord-commands-json:
-	cd apps/api && . .venv/bin/activate && python -m app.cli.discord_commands
-
 ingest:
 	cd apps/api && . .venv/bin/activate && python -m app.cli.ingest "$(FILE)"
-
-ingest-sample:
-	cd apps/api && . .venv/bin/activate && python -m app.cli.ingest dev-data/knowledge-base
-
-eval-retrieval:
-	cd apps/api && . .venv/bin/activate && python -m app.cli.eval_retrieval
-
-benchmark-retrieval:
-	cd apps/api && . .venv/bin/activate && python -m app.cli.benchmark_retrieval
-
-benchmark-import-check:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. GROUNDSTACK_LOAD_MAX_REQUESTS=1 python -c "import load.locustfile"
-
-benchmark-smoke:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile smoke --dry-run
-
-benchmark-volume-300:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile volume-300 --confirm
-
-benchmark-burst:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile burst --confirm
-
-benchmark-soak-short:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile soak-short --confirm
-
-benchmark-ollama:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile ollama --confirm
-
-benchmark-real-provider:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile real-provider --confirm --confirm-real-provider
-
-failure-test:
-	python3 scripts/failure_test.py --validate-only
-
-integrity-check:
-	python3 scripts/integrity_check.py --validate-only
-
-capacity-report:
-	python3 scripts/capacity_report.py --validate-only
-
-capacity-cost:
-	python3 scripts/cost_model.py --input docs/benchmarks/cost_inputs.example.json
-
-validate-training-data:
-	PYTHONPATH=training python3 training/scripts/validate_dataset.py
-
-prepare-training-data:
-	PYTHONPATH=training python3 training/scripts/prepare_dataset.py --config $(or $(CONFIG),training/configs/smoke_test.yaml)
-
-training-preflight:
-	PYTHONPATH=training python3 training/scripts/preflight.py --config $(or $(CONFIG),training/configs/llama32_3b_qlora.yaml)
-
-train-qlora:
-	PYTHONPATH=training python3 training/scripts/train_sft.py --config $(or $(CONFIG),training/configs/llama32_3b_qlora.yaml)
-
-compare-models:
-	PYTHONPATH=training python3 training/scripts/compare_models.py $(if $(BASE_RESPONSES),--base-responses $(BASE_RESPONSES),) $(if $(ADAPTER_RESPONSES),--adapter-responses $(ADAPTER_RESPONSES),)
-
-training-test:
-	cd training && PYTHONPATH=. ../apps/api/.venv/bin/python -m pytest
-
-review-training-candidates:
-	cd apps/api && . .venv/bin/activate && python -m app.cli.review_training_candidates list
-
-export-approved-training-data:
-	cd apps/api && . .venv/bin/activate && python -m app.cli.export_approved_training_data --output ../../training/data/processed/approved_feedback.jsonl
-
-eval:
-	PYTHONPATH=evaluation python3 evaluation/runners/run_eval.py --suite all
-
-eval-generation:
-	PYTHONPATH=evaluation python3 evaluation/runners/run_eval.py --suite generation
-
-eval-security:
-	PYTHONPATH=evaluation python3 evaluation/runners/run_eval.py --suite prompt_injection --suite security
-
-compare-prompts:
-	PYTHONPATH=evaluation python3 evaluation/runners/compare_prompts.py
-
-load-smoke-fake:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile smoke --dry-run
-
-load-sustained-fake:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile soak-short --confirm
-
-load-300-real:
-	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=. python -m load.run_locust_profile --profile real-provider --confirm --confirm-real-provider

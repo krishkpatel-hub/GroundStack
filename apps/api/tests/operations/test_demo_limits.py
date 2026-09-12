@@ -16,8 +16,6 @@ def _settings(**overrides):
     values = {
         "app_env": "demo",
         "demo_chat_enabled": True,
-        "demo_redis_required": False,
-        "redis_url": "",
         "demo_daily_question_limit": 100,
         "demo_daily_token_limit": 15000,
         "demo_provider_failure_threshold": 5,
@@ -28,7 +26,6 @@ def _settings(**overrides):
         "demo_request_limit_per_minute": 8,
         "llm_max_output_tokens": 500,
         "demo_max_context_tokens": 2500,
-        "redis_key_namespace": "test",
         "effective_generation_concurrency": 2,
         "model_queue_timeout_seconds": 0.1,
     }

@@ -1,5 +1,6 @@
 from httpx import ASGITransport, AsyncClient
 
+from app.core.settings import Settings
 from app.main import app
 from app.schemas.system import DatabaseStatus
 from app.services.ai.types import LLMHealth
@@ -28,7 +29,7 @@ async def test_system_status_endpoint(monkeypatch) -> None:
         }
 
     async def index_status(_self) -> dict[str, bool]:
-        return {"hnsw": True, "gin": True}
+        return {"hnsw": True}
 
     async def searchable_counts(_self) -> dict[str, int]:
         return {"searchable_sources": 0, "searchable_chunks": 0}
@@ -45,6 +46,7 @@ async def test_system_status_endpoint(monkeypatch) -> None:
             )
 
     monkeypatch.setattr("app.api.v1.system.check_database", healthy_database)
+    monkeypatch.setattr("app.api.v1.system.get_settings", lambda: Settings(_env_file=None))
     monkeypatch.setattr("app.api.v1.system.detect_device", lambda _selection: "cpu")
     monkeypatch.setattr("app.api.v1.system.get_llm_provider", lambda: FakeLLMProvider())
     monkeypatch.setattr(
@@ -74,18 +76,9 @@ async def test_system_status_endpoint(monkeypatch) -> None:
             "device": "cpu",
             "loaded": False,
         },
-        "reranker": {
-            "provider": "sentence_transformers",
-            "model": "cross-encoder/ms-marco-MiniLM-L6-v2",
-            "device": "cpu",
-            "enabled": True,
-            "loaded": False,
-        },
         "retrieval": {
-            "algorithm_version": "hybrid-rrf-ce-v1",
-            "reranking_enabled": True,
+            "algorithm_version": "semantic-vector-v1",
             "vector_index_available": True,
-            "text_search_index_available": True,
             "searchable_sources": 0,
             "searchable_chunks": 0,
         },
@@ -96,13 +89,6 @@ async def test_system_status_endpoint(monkeypatch) -> None:
             "model_available": True,
             "loaded": True,
             "detail": "ready",
-            "model_variant": "base",
-            "adapter_name": None,
-            "adapter_version": None,
-            "dataset_version": None,
-            "model_manifest_checksum": None,
-            "evaluation_status": "not_evaluated",
-            "promotion_status": "created",
         },
         "knowledge": {
             "knowledge_sources": 0,
@@ -112,3 +98,27 @@ async def test_system_status_endpoint(monkeypatch) -> None:
             "failed_ingestion_jobs": 0,
         },
     }
+
+
+async def test_system_status_sanitizes_provider_failures(monkeypatch) -> None:
+    async def unavailable_database() -> DatabaseStatus:
+        return DatabaseStatus(connected=False, detail="ConnectionError")
+
+    class FailingLLMProvider:
+        async def health(self) -> LLMHealth:
+            raise RuntimeError("provider rejected api_key=secret-value")
+
+    monkeypatch.setattr("app.api.v1.system.check_database", unavailable_database)
+    monkeypatch.setattr("app.api.v1.system.get_settings", lambda: Settings(_env_file=None))
+    monkeypatch.setattr("app.api.v1.system.detect_device", lambda _selection: "cpu")
+    monkeypatch.setattr("app.api.v1.system.get_llm_provider", lambda: FailingLLMProvider())
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/v1/system/status")
+
+    assert response.status_code == 200
+    llm = response.json()["llm"]
+    assert llm["reachable"] is False
+    assert llm["detail"] == "LLM provider status check failed."
+    assert "secret-value" not in response.text

@@ -9,7 +9,7 @@ from app.services.ai.types import RetrievalCandidate, RetrievalFilters
 from app.services.ingestion.persistence import vector_literal
 
 
-def _metadata_page_number(metadata: dict[str, Any]) -> int | None:
+def metadata_page_number(metadata: dict[str, Any]) -> int | None:
     value = metadata.get("page_number") or metadata.get("page")
     return int(value) if isinstance(value, int | str) and str(value).isdigit() else None
 
@@ -89,58 +89,6 @@ class RetrievalRepository:
         ).mappings()
         return [self._candidate_from_row(row) for row in rows]
 
-    async def lexical_candidates(
-        self,
-        *,
-        query_text: str,
-        filters: RetrievalFilters,
-        limit: int,
-    ) -> list[RetrievalCandidate]:
-        where_sql, params = self._filter_sql(filters)
-        params.update({"query_text": query_text, "limit": limit})
-        rows = (
-            await self.session.execute(
-                text(
-                    f"""
-                    WITH query AS (
-                      SELECT websearch_to_tsquery('english', :query_text) AS tsq
-                    )
-                    SELECT
-                      s.id AS source_id,
-                      d.id AS document_id,
-                      d.version AS document_version,
-                      c.id AS chunk_id,
-                      c.position AS chunk_position,
-                      d.title,
-                      s.display_name AS source_display_name,
-                      CASE
-                        WHEN s.source_type = 'url' THEN s.canonical_uri
-                        ELSE NULL
-                      END AS source_uri,
-                      s.source_type,
-                      c.heading_path,
-                      c.content AS chunk_content,
-                      c.chunk_checksum,
-                      c.chunk_metadata,
-                      row_number() OVER (
-                        ORDER BY ts_rank_cd(c.search_vector, query.tsq) DESC, c.id
-                      ) AS lexical_rank,
-                      ts_rank_cd(c.search_vector, query.tsq) AS lexical_score
-                    FROM document_chunks c
-                    JOIN documents d ON d.id = c.document_id
-                    JOIN knowledge_sources s ON s.id = d.source_id
-                    CROSS JOIN query
-                    WHERE {where_sql}
-                      AND query.tsq @@ c.search_vector
-                    ORDER BY lexical_score DESC, c.id
-                    LIMIT :limit
-                    """
-                ),
-                params,
-            )
-        ).mappings()
-        return [self._candidate_from_row(row) for row in rows]
-
     async def persist_run(
         self,
         *,
@@ -151,8 +99,6 @@ class RetrievalRepository:
         configuration: dict[str, Any],
         algorithm_version: str,
         candidate_counts: dict[str, Any],
-        reranking_mode: str,
-        degraded_mode: dict[str, str] | None,
         latency_ms: dict[str, float],
         candidates: list[RetrievalCandidate],
     ) -> UUID:
@@ -164,8 +110,8 @@ class RetrievalRepository:
             configuration=configuration,
             algorithm_version=algorithm_version,
             candidate_counts=candidate_counts,
-            reranking_mode=reranking_mode,
-            degraded_mode=degraded_mode,
+            reranking_mode="disabled",
+            degraded_mode=None,
             latency_ms=latency_ms,
         )
         self.session.add(run)
@@ -177,10 +123,6 @@ class RetrievalRepository:
                     chunk_id=candidate.chunk_id,
                     vector_rank=candidate.vector_rank,
                     vector_distance=candidate.vector_distance,
-                    lexical_rank=candidate.lexical_rank,
-                    lexical_score=candidate.lexical_score,
-                    rrf_score=candidate.rrf_score,
-                    reranker_score=candidate.reranker_score,
                     final_rank=candidate.final_rank,
                     selected=candidate.selected,
                     exclusion_reason=candidate.exclusion_reason,
@@ -196,10 +138,7 @@ class RetrievalRepository:
                     """
                     SELECT indexname FROM pg_indexes
                     WHERE tablename = 'document_chunks'
-                      AND indexname IN (
-                        'ix_document_chunks_embedding_hnsw',
-                        'ix_document_chunks_search_vector'
-                      )
+                      AND indexname = 'ix_document_chunks_embedding_hnsw'
                     """
                 )
             )
@@ -207,7 +146,6 @@ class RetrievalRepository:
         names = set(rows)
         return {
             "hnsw": "ix_document_chunks_embedding_hnsw" in names,
-            "gin": "ix_document_chunks_search_vector" in names,
         }
 
     async def searchable_counts(self) -> dict[str, int]:
@@ -258,11 +196,9 @@ class RetrievalRepository:
             source_uri=row["source_uri"],
             source_type=row["source_type"],
             section_path=list(row["heading_path"] or []),
-            page_number=_metadata_page_number(metadata),
+            page_number=metadata_page_number(metadata),
             chunk_content=row["chunk_content"],
             chunk_checksum=row["chunk_checksum"],
             vector_rank=row.get("vector_rank"),
             vector_distance=row.get("vector_distance"),
-            lexical_rank=row.get("lexical_rank"),
-            lexical_score=row.get("lexical_score"),
         )

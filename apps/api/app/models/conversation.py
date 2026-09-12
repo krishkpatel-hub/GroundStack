@@ -184,7 +184,7 @@ class MessageFeedback(Base):
     client_request_id: Mapped[str] = mapped_column(String(120), nullable=False)
     message_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     source_platform: Mapped[str] = mapped_column(String(32), nullable=False, default="web")
-    training_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    training_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

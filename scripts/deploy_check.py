@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 REQUIRED_DEMO_VARS = [
     "APP_ENV",
     "DATABASE_URL",
-    "REDIS_URL",
     "LLM_PROVIDER",
     "LLM_BASE_URL",
     "LLM_MODEL",
@@ -31,9 +30,6 @@ def main() -> int:
         errors.append("DOCS_ENABLED must be false for the public demo.")
     if os.getenv("DEMO_CHAT_ENABLED", "true").lower() != "true":
         errors.append("DEMO_CHAT_ENABLED is off; launch would be in maintenance mode.")
-    redis_url = os.getenv("REDIS_URL", "")
-    if redis_url and not redis_url.startswith(("rediss://", "redis://")):
-        errors.append("REDIS_URL must use redis:// locally or rediss:// for managed Redis.")
     if os.getenv("LLM_PROVIDER") == "openai_compatible" and not os.getenv("LLM_API_KEY"):
         errors.append("OpenAI-compatible hosted inference requires LLM_API_KEY.")
     if missing:
@@ -41,7 +37,6 @@ def main() -> int:
 
     print("GroundStack deploy check")
     print(f"database_host={_host(os.getenv('DATABASE_URL', ''))}")
-    print(f"redis_host={_host(redis_url)}")
     print(f"llm_provider={os.getenv('LLM_PROVIDER', 'unset')}")
     print(f"llm_model={os.getenv('LLM_MODEL', 'unset')}")
     if errors:

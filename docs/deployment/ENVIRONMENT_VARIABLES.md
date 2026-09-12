@@ -9,10 +9,8 @@ Values below are placeholders. Do not commit real secrets.
 | `DATABASE_DIRECT_URL` | API migration | hosted demo/prod | yes | `postgresql+asyncpg://...` | Direct migration connection for pooled providers | host/database displayed, credentials hidden | rotate DB password | no running app redeploy unless value changes |
 | `DB_SSL_REQUIRED` | API | hosted demo/prod | no | `true` | Enforce TLS for Postgres | `true` for Neon/managed DB | n/a | yes |
 | `DB_POOL_SIZE` | API | all | no | `5` | App-side DB connection cap | 1-20 | n/a | yes |
-| `REDIS_URL` | API | public demo | yes | `rediss://...` | Rate limits, daily capacity, temporary demo state | `rediss://` for Upstash/managed Redis | rotate Redis token | yes |
-| `REDIS_KEY_NAMESPACE` | API | all | no | `groundstack` | Key prefix for safe deletion | lowercase project namespace | n/a | yes |
 | `DEMO_CHAT_ENABLED` | API | public demo | no | `true` | Public demo kill switch | `false` returns maintenance availability | n/a | yes |
-| `DEMO_REDIS_REQUIRED` | API | public demo | no | `true` | Fail closed if Redis is unavailable | `true` for public hosted demo | n/a | yes |
+| `DEMO_REDIS_REQUIRED` | API | public demo | no | `false` | Whether to require an external shared counter store | `false` for the simplified single-instance demo | n/a | yes |
 | `DEMO_DAILY_QUESTION_LIMIT` | API | public demo | no | `100` | Global daily capacity | positive integer | n/a | yes |
 | `DEMO_DAILY_TOKEN_LIMIT` | API | public demo | no | `15000` | Global approximate token ceiling | positive integer | n/a | yes |
 | `DEMO_REQUEST_LIMIT_PER_MINUTE` | API | public demo | no | `8` | Per-client anonymous rate limit | 1-60 | n/a | yes |
@@ -42,5 +40,5 @@ Values below are placeholders. Do not commit real secrets.
 | `DISCORD_DEFAULT_RETENTION_DAYS` | API | Discord sandbox/prod | no | `30` | Default retention for controls and guild config | 1-365 | n/a | yes |
 | `DISCORD_ALLOW_DMS` | API | Discord sandbox/prod | no | `false` | Allows direct-message use when explicitly enabled | false by default | n/a | yes |
 
-Changing secret values in Render, Vercel, Neon, Upstash, or the inference provider should be followed
-by a redeploy or service restart where that platform requires it.
+Changing secret values in Render, Vercel, Neon, or the inference provider should be followed by a
+redeploy or service restart where that platform requires it.

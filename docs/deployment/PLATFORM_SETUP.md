@@ -7,12 +7,6 @@
 - Use pooled `DATABASE_URL` for the running app and direct `DATABASE_DIRECT_URL` for migrations.
 - Set `DB_SSL_REQUIRED=true`.
 
-## Upstash
-
-- Use the provider's TLS Redis URL, usually `rediss://...`.
-- Set `DEMO_REDIS_REQUIRED=true` for the public demo.
-- GroundStack keys are namespaced by `REDIS_KEY_NAMESPACE`, `APP_ENV`, and `demo`.
-
 ## Render
 
 - Use `render.yaml` as a blueprint reference.
@@ -20,6 +14,8 @@
 - Health check: `/api/v1/health/live`.
 - Readiness check: `/api/v1/health/ready`.
 - Do not run migrations automatically from multiple replicas.
+- Keep a single free API instance for the simplified demo. Without Redis, demo throttles are
+  in-process and reset on restart.
 
 ## Vercel
 

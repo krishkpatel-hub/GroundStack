@@ -4,7 +4,7 @@ services:
     runtime: docker
     plan: free
     repo: https://github.com/krishkpatel-hub/GroundStack
-    branch: deploy/live-demo
+    branch: deploy/simplified-live-demo
     dockerfilePath: apps/api/Dockerfile
     dockerContext: .
     healthCheckPath: /api/v1/health/live
@@ -21,7 +21,7 @@ services:
       - key: DEMO_CHAT_ENABLED
         value: "true"
       - key: DEMO_REDIS_REQUIRED
-        value: "true"
+        value: "false"
       - key: DEMO_REQUEST_LIMIT_PER_MINUTE
         value: "4"
       - key: DEMO_DAILY_QUESTION_LIMIT
@@ -52,10 +52,6 @@ services:
         sync: false
       - key: DB_SSL_REQUIRED
         value: "true"
-      - key: REDIS_URL
-        sync: false
-      - key: REDIS_KEY_NAMESPACE
-        value: groundstack
       - key: LLM_PROVIDER
         value: openai_compatible
       - key: LLM_BASE_URL

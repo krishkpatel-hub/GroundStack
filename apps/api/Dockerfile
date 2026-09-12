@@ -12,6 +12,8 @@ COPY apps/api/pyproject.toml /app/
 COPY apps/api/app /app/app
 COPY apps/api/migrations /app/migrations
 COPY apps/api/alembic.ini /app/alembic.ini
+COPY scripts /app/scripts
+COPY docs/demo-corpus /app/docs/demo-corpus
 
 RUN pip install --upgrade pip \
     && pip install .

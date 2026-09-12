@@ -5,7 +5,7 @@ GroundStack supports two provider-neutral topologies.
 ## Single-Host Demo
 
 Use `deploy/demo-compose.yml` for a single host with Caddy, Next.js, FastAPI, PostgreSQL with
-pgvector, Redis, optional Ollama, and optional observability.
+pgvector, optional Ollama, and optional observability.
 
 ```bash
 cp deploy/.env.demo.example deploy/.env.demo
@@ -17,7 +17,7 @@ The checked-in example uses local ports `8080` and `8443` with `PUBLIC_HOST=:80`
 smoke-tested locally at `http://localhost:8080`. For a public TLS host, set `PUBLIC_HOST` and
 `PUBLIC_API_BASE_URL` to the real HTTPS domain and use ports `80` and `443`.
 
-Only Caddy publishes public ports. PostgreSQL, Redis, inference, and application services stay on
+Only Caddy publishes public ports. PostgreSQL, inference, and application services stay on
 internal Docker networks. Caddy is configured to preserve SSE streaming for `/api/*`.
 
 Enable optional local inference or observability with Compose profiles:
@@ -46,10 +46,11 @@ docker compose -f deploy/demo-compose.yml --env-file deploy/.env.demo run --rm a
 Use the same API and web images with:
 
 - Managed PostgreSQL that supports pgvector.
-- Managed Redis.
 - External Ollama, vLLM, or OpenAI-compatible inference.
 - Managed TLS/load balancer or reverse proxy.
 - External object storage for backups if configured by the operator.
 
 GroundStack is not yet a fully isolated multi-tenant knowledge platform. The knowledge base remains
-an admin-managed shared corpus.
+an admin-managed shared corpus. The simplified live demo uses in-process demo throttles on a single
+API instance; add a managed shared counter store only after explicitly changing the target
+architecture.

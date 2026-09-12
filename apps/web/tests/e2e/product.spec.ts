@@ -241,7 +241,7 @@ test("landing page opens the workspace and completes a cited answer", async ({
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: "A private technical-support assistant for approved documentation.",
+      name: "Answers grounded in the documents your organization trusts.",
     }),
   ).toBeVisible();
   await expect(page.getByText("GroundStack portfolio project")).toBeVisible();
@@ -458,6 +458,8 @@ test("mobile navigation and axe scan pass the core landing page", async ({
   await mockApi(page, "admin");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  const landingResults = await new AxeBuilder({ page }).analyze();
+  expect(landingResults.violations).toEqual([]);
   await page.getByRole("link", { name: "Open workspace" }).first().click();
   await expect(
     page.getByLabel("Workspace views").getByRole("tab", { name: "Documents" }),
@@ -466,11 +468,59 @@ test("mobile navigation and axe scan pass the core landing page", async ({
   expect(results.violations).toEqual([]);
 });
 
+test("landing animation and workflow tabs support keyboard control", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const playback = page.getByRole("button", { name: "Pause animation" });
+  await expect(playback).toBeVisible();
+  await playback.click();
+  await expect(
+    page.getByRole("button", { name: "Play animation" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Play animation" }).click();
+  await expect(
+    page.getByRole("button", { name: "Pause animation" }),
+  ).toBeVisible();
+
+  const askTab = page.getByRole("tab", { name: "02 Ask" });
+  await askTab.click();
+  await expect(askTab).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tabpanel", { name: "02 Ask" })).toContainText(
+    "searches the available documentation",
+  );
+  await askTab.press("ArrowRight");
+  await expect(page.getByRole("tab", { name: "03 Verify" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+
+  for (const link of await page
+    .getByRole("link", { name: "Open workspace" })
+    .all()) {
+    await expect(link).toHaveAttribute("href", "/ask");
+  }
+  await expect(
+    page.getByRole("link", { name: "Open GroundStack" }),
+  ).toHaveAttribute("href", "/ask");
+});
+
+test("reduced motion presents the completed workflow immediately", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await expect(page.getByText("Answer supported by 1 source")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Replay animation" }),
+  ).toBeVisible();
+});
+
 test("core workspace routes avoid horizontal overflow at reviewed widths", async ({
   page,
 }) => {
   await mockApi(page, "admin");
-  for (const width of [320, 375, 430, 768, 1024, 1440]) {
+  for (const width of [320, 375, 430, 768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of [
       "/",
@@ -530,4 +580,25 @@ test("workspace reflows at a 200 percent zoom equivalent", async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(1);
   await expect(page.getByRole("textbox", { name: "Question" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+});
+
+test("landing page reflows at a 200 percent zoom equivalent", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 640, height: 900 });
+  await page.goto("/");
+  await page.evaluate(() => {
+    document.documentElement.style.zoom = "2";
+  });
+  const overflow = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth -
+      document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+  await expect(
+    page.getByRole("heading", {
+      name: "Answers grounded in the documents your organization trusts.",
+    }),
+  ).toBeVisible();
 });

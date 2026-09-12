@@ -25,7 +25,7 @@ from app.models.base import Base
 class Vector(UserDefinedType):
     cache_ok = True
 
-    def __init__(self, dimensions: int) -> None:
+    def __init__(self, dimensions: int = 384) -> None:
         self.dimensions = dimensions
 
     def get_col_spec(self, **_kwargs: Any) -> str:
@@ -34,10 +34,13 @@ class Vector(UserDefinedType):
 
 class KnowledgeSource(Base):
     __tablename__ = "knowledge_sources"
-    __table_args__ = (UniqueConstraint("source_type", "canonical_uri", name="uq_sources_type_uri"),)
+    __table_args__ = (
+        UniqueConstraint("source_type", "canonical_uri", name="uq_sources_type_uri"),
+        Index("ix_knowledge_sources_type", "source_type"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    source_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    source_type: Mapped[str] = mapped_column(String(32), nullable=False)
     canonical_uri: Mapped[str] = mapped_column(Text, nullable=False)
     display_name: Mapped[str] = mapped_column(String(300), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active", index=True)
@@ -61,6 +64,8 @@ class Document(Base):
     __table_args__ = (
         UniqueConstraint("source_id", "version", name="uq_documents_source_version"),
         UniqueConstraint("source_id", "content_checksum", name="uq_documents_source_checksum"),
+        Index("ix_documents_checksum", "content_checksum"),
+        Index("ix_documents_source_id", "source_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -70,7 +75,7 @@ class Document(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str] = mapped_column(String(300), nullable=False)
     mime_type: Mapped[str] = mapped_column(String(120), nullable=False)
-    content_checksum: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    content_checksum: Mapped[str] = mapped_column(String(64), nullable=False)
     normalized_text: Mapped[str] = mapped_column(Text, nullable=False)
     extraction_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
@@ -87,6 +92,14 @@ class DocumentChunk(Base):
     __tablename__ = "document_chunks"
     __table_args__ = (
         UniqueConstraint("document_id", "position", name="uq_chunks_document_position"),
+        Index("ix_document_chunks_checksum", "chunk_checksum"),
+        Index("ix_document_chunks_search_vector", "search_vector", postgresql_using="gin"),
+        Index(
+            "ix_document_chunks_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -100,7 +113,7 @@ class DocumentChunk(Base):
     heading_path: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     token_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    chunk_checksum: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    chunk_checksum: Mapped[str] = mapped_column(String(64), nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(384), nullable=False)
     embedding_model: Mapped[str] = mapped_column(String(200), nullable=False)
     chunk_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
@@ -116,6 +129,7 @@ class DocumentChunk(Base):
 
 class IngestionJob(Base):
     __tablename__ = "ingestion_jobs"
+    __table_args__ = (Index("ix_ingestion_jobs_created_at", "created_at"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     source_id: Mapped[uuid.UUID | None] = mapped_column(

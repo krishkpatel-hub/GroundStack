@@ -96,7 +96,7 @@ export function HeroWorkflow() {
             PDF
           </div>
           <div className="demo-file-copy">
-            <strong>IT Support Guide.pdf</strong>
+            <strong>Approved document</strong>
             <span>Approved documentation</span>
           </div>
           <span
@@ -119,7 +119,7 @@ export function HeroWorkflow() {
           aria-hidden={step < 4 && !reducedMotion}
         >
           <span>You</span>
-          <p>How should I resolve error NET-204?</p>
+          <p>How do I restore the network connection?</p>
         </div>
 
         <div
@@ -150,7 +150,7 @@ export function HeroWorkflow() {
         >
           <div>
             <span>Source [S1]</span>
-            <strong>IT Support Guide.pdf</strong>
+            <strong>Approved document</strong>
           </div>
           <p>
             “Refresh the active network profile and confirm the connection check
@@ -278,7 +278,7 @@ function WorkflowVisual({ tab }: { tab: WorkflowTabId }) {
       >
         <div className="workflow-upload-target">
           <span className="mini-label">Approved source</span>
-          <strong>Network operations guide.pdf</strong>
+          <strong>Approved document</strong>
           <div className="workflow-status-row">
             <span>Processing complete</span>
             <strong>Ready</strong>
@@ -325,7 +325,7 @@ function WorkflowVisual({ tab }: { tab: WorkflowTabId }) {
         <strong>[S1]</strong>
       </div>
       <div className="workflow-source">
-        <span>[S1] Network operations guide.pdf</span>
+        <span>[S1] Approved document</span>
         <p>“Run the readiness check after restoring the approved profile.”</p>
       </div>
       <div className="workflow-limitation">

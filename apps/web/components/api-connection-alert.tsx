@@ -2,7 +2,7 @@
 
 import { AlertTriangle } from "lucide-react";
 
-import { API_UNAVAILABLE_MESSAGE } from "@/lib/api";
+import { API_RETRY_EVENT, API_UNAVAILABLE_MESSAGE } from "@/lib/api";
 
 export function isApiUnavailableMessage(message: string | null | undefined) {
   return Boolean(message?.startsWith(API_UNAVAILABLE_MESSAGE));
@@ -22,7 +22,14 @@ export function ApiConnectionAlert({
       <AlertTriangle className="inline h-4 w-4" aria-hidden /> {message}
       {apiUnavailable && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button className="button min-h-9" type="button" onClick={onRetry}>
+          <button
+            className="button min-h-9"
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new Event(API_RETRY_EVENT));
+              onRetry();
+            }}
+          >
             Retry connection
           </button>
           <details className="dev-details">

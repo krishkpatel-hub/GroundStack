@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { fetchAuthInfo } from "@/lib/auth";
+import { API_RETRY_EVENT } from "@/lib/api";
 import { fetchDocuments } from "@/lib/knowledge";
 
 type KnowledgeState =
@@ -25,10 +26,17 @@ export function WorkspaceNav({ documentCount }: { documentCount?: number }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetchAuthInfo(controller.signal)
-      .then((auth) => setCanManageDocuments(auth.admin))
-      .catch(() => setCanManageDocuments(false));
-    return () => controller.abort();
+    const refreshAuth = () => {
+      void fetchAuthInfo(controller.signal)
+        .then((auth) => setCanManageDocuments(auth.admin))
+        .catch(() => setCanManageDocuments(false));
+    };
+    refreshAuth();
+    window.addEventListener(API_RETRY_EVENT, refreshAuth);
+    return () => {
+      controller.abort();
+      window.removeEventListener(API_RETRY_EVENT, refreshAuth);
+    };
   }, []);
 
   return (

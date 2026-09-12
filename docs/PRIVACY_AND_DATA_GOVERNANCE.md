@@ -17,5 +17,5 @@ Deleting a document removes its document records, chunks, and embeddings transac
 Old conversation answers may remain, but a deleted source must not be represented as currently
 available evidence.
 
-No private corpus or customer data is committed. The presentation validation file is original,
-neutral content and is loaded only through an explicit administrator action.
+No private corpus, customer data, or presentation document is committed or seeded. Automated
+tests use isolated neutral fixtures; they do not populate the normal workspace database.

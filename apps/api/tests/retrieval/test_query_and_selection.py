@@ -12,14 +12,14 @@ from app.services.retrieval.selection import (
 from app.services.retrieval.service import SemanticRetriever
 
 
-def candidate(*, distance: float, content: str = "Resolve GS-DEMO-217 by refreshing config."):
+def candidate(*, distance: float, content: str = "Resolve CFG-218 by refreshing config."):
     return RetrievalCandidate(
         source_id=uuid4(),
         document_id=uuid4(),
         document_version=1,
         chunk_id=uuid4(),
         chunk_position=0,
-        title="Presentation Validation",
+        title="Configuration reference",
         source_display_name="validation.md",
         source_uri=None,
         source_type="file",
@@ -121,7 +121,7 @@ async def test_semantic_retriever_returns_thresholded_vector_evidence(monkeypatc
     )
 
     result = await retriever.retrieve(
-        RetrievalQuery(text="How do I resolve GS-DEMO-217?", filters=RetrievalFilters())
+        RetrievalQuery(text="How do I resolve CFG-218?", filters=RetrievalFilters())
     )
 
     assert result.evidence_found is True

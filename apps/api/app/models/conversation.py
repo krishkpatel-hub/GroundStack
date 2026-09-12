@@ -25,6 +25,9 @@ class Conversation(Base):
     __table_args__ = (
         Index("ix_conversations_last_message_at", "last_message_at"),
         Index("ix_conversations_archived", "archived"),
+        Index("ix_conversations_created_at", "created_at"),
+        Index("ix_conversations_owner_subject", "owner_subject"),
+        Index("ix_conversations_demo_session_id", "demo_session_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -53,6 +56,8 @@ class Message(Base):
         Index("ix_messages_retrieval_run_id", "retrieval_run_id"),
         Index("ix_messages_owner_subject", "owner_subject"),
         Index("ix_messages_status", "status"),
+        Index("ix_messages_conversation_id", "conversation_id"),
+        Index("ix_messages_created_at", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import { BrandMark } from "@/components/brand-mark";
+import { API_RETRY_EVENT } from "@/lib/api";
 import { fetchAuthInfo, type AuthInfo } from "@/lib/auth";
 
 type AppFrameProps = {
@@ -63,21 +64,28 @@ export function AppFrame({
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetchAuthInfo(controller.signal)
-      .then((nextAuth) => {
-        setAuth(nextAuth);
-        setAuthLoaded(true);
-      })
-      .catch(() => {
-        setAuth({
-          authenticated: false,
-          anonymous: true,
-          roles: [],
-          admin: false,
+    const refreshAuth = () => {
+      void fetchAuthInfo(controller.signal)
+        .then((nextAuth) => {
+          setAuth(nextAuth);
+          setAuthLoaded(true);
+        })
+        .catch(() => {
+          setAuth({
+            authenticated: false,
+            anonymous: true,
+            roles: [],
+            admin: false,
+          });
+          setAuthLoaded(true);
         });
-        setAuthLoaded(true);
-      });
-    return () => controller.abort();
+    };
+    refreshAuth();
+    window.addEventListener(API_RETRY_EVENT, refreshAuth);
+    return () => {
+      controller.abort();
+      window.removeEventListener(API_RETRY_EVENT, refreshAuth);
+    };
   }, []);
 
   useEffect(() => {

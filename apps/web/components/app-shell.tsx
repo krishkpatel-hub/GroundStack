@@ -78,12 +78,6 @@ type StreamStage =
   | "Stopped"
   | "Failed";
 
-const exampleQuestions = [
-  "What does the error code in this document mean?",
-  "What steps should I follow to resolve the issue?",
-  "What should I verify before completing this procedure?",
-] as const;
-
 const activeConversationStorageKey = "groundstack.activeConversationId";
 const generationFailureMessage =
   "GroundStack could not generate an answer. Retry after the provider recovers.";
@@ -109,6 +103,10 @@ export function AppShell({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [historySearch, setHistorySearch] = useState("");
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyBusy, setHistoryBusy] = useState(false);
+  const historyMutationRef = useRef(false);
+  const conversationLoadRef = useRef(0);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [deleteArmed, setDeleteArmed] = useState(false);
@@ -131,7 +129,9 @@ export function AppShell({
   const followResponseRef = useRef(true);
 
   const loading =
-    stage === "Retrieving evidence" || stage === "Generating answer";
+    stage === "Retrieving evidence" ||
+    stage === "Generating answer" ||
+    stage === "Repairing citations";
 
   const loadWorkspaceDocuments = useCallback(async () => {
     try {
@@ -147,8 +147,15 @@ export function AppShell({
   }, []);
 
   async function loadConversations() {
-    const items = await fetchConversations().catch(() => []);
-    setConversations(items.filter((item) => !item.archived));
+    try {
+      const items = await fetchConversations();
+      setConversations(items.filter((item) => !item.archived));
+      setHistoryError(null);
+    } catch (loadError) {
+      setHistoryError(
+        friendlyApiError(loadError, "Could not load conversations.").message,
+      );
+    }
   }
 
   useEffect(() => {
@@ -173,8 +180,12 @@ export function AppShell({
           }
         }
       })
-      .catch(() => {
-        if (active) setConversations([]);
+      .catch((loadError) => {
+        if (active)
+          setHistoryError(
+            friendlyApiError(loadError, "Could not load conversations.")
+              .message,
+          );
       });
     fetchDocuments(100, 0)
       .then((page) => {
@@ -276,7 +287,10 @@ export function AppShell({
   }, [conversations, historySearch]);
 
   async function selectConversation(nextConversationId: string) {
+    const requestId = ++conversationLoadRef.current;
     abortRef.current?.abort();
+    abortRef.current = null;
+    setMessages([]);
     setConversationId(nextConversationId);
     window.localStorage.setItem(
       activeConversationStorageKey,
@@ -289,6 +303,7 @@ export function AppShell({
     setEditingTitle(false);
     try {
       const rows = await fetchConversationMessages(nextConversationId);
+      if (requestId !== conversationLoadRef.current) return;
       setMessages(
         rows
           .filter((row) => row.role === "user" || row.role === "assistant")
@@ -316,6 +331,7 @@ export function AppShell({
           })),
       );
     } catch (loadError) {
+      if (requestId !== conversationLoadRef.current) return;
       setError(
         friendlyApiError(loadError, "Could not load this conversation.")
           .message,
@@ -325,6 +341,7 @@ export function AppShell({
   }
 
   function startNewConversation() {
+    conversationLoadRef.current += 1;
     abortRef.current?.abort();
     abortRef.current = null;
     setConversationId(null);
@@ -340,28 +357,56 @@ export function AppShell({
   }
 
   async function renameSelectedConversation() {
-    if (!conversationId || !titleDraft.trim()) return;
-    const updated = await updateConversation(conversationId, {
-      title: titleDraft.trim(),
-    });
-    setConversations((current) =>
-      current.map((item) => (item.id === updated.id ? updated : item)),
-    );
-    setEditingTitle(false);
-    setAnnounce("Conversation renamed");
+    if (!conversationId || !titleDraft.trim() || historyMutationRef.current)
+      return;
+    historyMutationRef.current = true;
+    setHistoryBusy(true);
+    setHistoryError(null);
+    try {
+      const updated = await updateConversation(conversationId, {
+        title: titleDraft.trim(),
+      });
+      setConversations((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      setEditingTitle(false);
+      setAnnounce("Conversation renamed");
+    } catch (renameError) {
+      setHistoryError(
+        friendlyApiError(
+          renameError,
+          "Could not rename this conversation. Try saving again.",
+        ).message,
+      );
+    } finally {
+      historyMutationRef.current = false;
+      setHistoryBusy(false);
+    }
   }
 
   async function deleteSelectedConversation() {
-    if (!conversationId || !deleteArmed) return;
-    await deleteConversation(conversationId);
-    window.localStorage.removeItem(activeConversationStorageKey);
-    setConversations((current) =>
-      current.filter((item) => item.id !== conversationId),
-    );
-    startNewConversation();
-    setAnnounce(
-      "Conversation deleted. Messages were archived for this workspace.",
-    );
+    if (!conversationId || !deleteArmed || historyMutationRef.current) return;
+    historyMutationRef.current = true;
+    setHistoryBusy(true);
+    setHistoryError(null);
+    try {
+      await deleteConversation(conversationId);
+      setConversations((current) =>
+        current.filter((item) => item.id !== conversationId),
+      );
+      startNewConversation();
+      setAnnounce("Conversation removed from history.");
+    } catch (deleteError) {
+      setHistoryError(
+        friendlyApiError(
+          deleteError,
+          "Could not delete this conversation. Try again.",
+        ).message,
+      );
+    } finally {
+      historyMutationRef.current = false;
+      setHistoryBusy(false);
+    }
   }
 
   async function submitChat(
@@ -419,6 +464,7 @@ export function AppShell({
         },
         controller.signal,
       )) {
+        if (abortRef.current !== controller) return;
         if (item.event === "conversation" && item.data.conversation_id) {
           setConversationId(item.data.conversation_id);
           window.localStorage.setItem(
@@ -470,6 +516,7 @@ export function AppShell({
         }
       }
     } catch (chatError) {
+      if (abortRef.current !== controller) return;
       if (
         chatError instanceof DOMException &&
         chatError.name === "AbortError"
@@ -486,6 +533,8 @@ export function AppShell({
           ? generationFailureMessage
           : "Answer generation failed";
       setStage("Failed");
+      setQuestion(trimmed);
+      void loadConversations();
       setAnnounce("Generation failed. No answer was saved for this attempt.");
       setMessages((current) =>
         updateAssistant(current, assistantLocalId, {
@@ -504,7 +553,6 @@ export function AppShell({
 
   function stopGeneration() {
     abortRef.current?.abort();
-    abortRef.current = null;
   }
 
   return (
@@ -563,6 +611,7 @@ export function AppShell({
                     <button
                       className="button button-primary min-h-9"
                       type="button"
+                      disabled={historyBusy || !titleDraft.trim()}
                       onClick={() => void renameSelectedConversation()}
                     >
                       Save
@@ -593,6 +642,7 @@ export function AppShell({
                 <button
                   className="button button-danger min-h-9"
                   type="button"
+                  disabled={historyBusy}
                   onClick={() =>
                     deleteArmed
                       ? void deleteSelectedConversation()
@@ -612,9 +662,17 @@ export function AppShell({
             </div>
           )}
           <div className="mt-3 space-y-1">
+            {historyError && !documentsLoadError && (
+              <ApiConnectionAlert
+                message={historyError}
+                onRetry={() => void loadConversations()}
+              />
+            )}
             {filteredConversations.length === 0 && (
               <p className="text-sm leading-6 text-[var(--graphite)]">
-                No matching conversations. Start a new question to create one.
+                {historySearch
+                  ? "No matching conversations."
+                  : "No conversations yet."}
               </p>
             )}
             {filteredConversations.map((conversation) => (
@@ -651,29 +709,13 @@ export function AppShell({
             {announce}
           </div>
           <div className="message-list">
-            <section
-              className="demo-workspace-note"
-              aria-labelledby="workspace-purpose-title"
-            >
-              <div>
-                <p className="eyebrow">Approved knowledge only</p>
-                <h2 id="workspace-purpose-title">
-                  Grounded answers with inspectable sources
-                </h2>
-                <p>
-                  GroundStack answers from documents an administrator has added
-                  to this knowledge base. Review the cited excerpts before
-                  relying on an answer.
-                </p>
-              </div>
-              <Link className="button no-underline" href="/knowledge">
-                View documents
-              </Link>
-            </section>
             {documentsLoadError && (
               <ApiConnectionAlert
                 message={documentsLoadError}
-                onRetry={() => void loadWorkspaceDocuments()}
+                onRetry={() => {
+                  void loadWorkspaceDocuments();
+                  void loadConversations();
+                }}
               />
             )}
             {!documentsLoadError && !hasDocuments && (
@@ -704,27 +746,9 @@ export function AppShell({
                   Ask your knowledge base
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
-                  Ask a specific question about an uploaded document, or use an
-                  example below as a starting point.
+                  Ask a specific question about a Ready document. Sources will
+                  appear with the answer so you can inspect the evidence.
                 </p>
-                <div
-                  className="suggestion-grid mt-4"
-                  aria-label="Example questions"
-                >
-                  {exampleQuestions.map((exampleQuestion) => (
-                    <button
-                      key={exampleQuestion}
-                      className="suggestion-button"
-                      type="button"
-                      onClick={() => {
-                        setQuestion(exampleQuestion);
-                        setAnnounce("Example question filled");
-                      }}
-                    >
-                      {exampleQuestion}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
             {messages.map((message) => (
@@ -789,9 +813,7 @@ export function AppShell({
                 id="composer-help"
                 className="text-xs leading-5 text-[var(--graphite)]"
               >
-                Enter sends. Shift+Enter adds a line. {1200 - question.length}{" "}
-                characters remaining. Duplicate submissions are blocked while
-                generation is active.
+                {1200 - question.length} characters remaining.
               </p>
               <div className="grid min-w-[220px] flex-1 gap-2 md:grid-cols-2">
                 <select
@@ -900,13 +922,18 @@ const MessageBubble = memo(function MessageBubble({
       <div className="message-body">
         {message.role === "assistant" ? (
           <Markdown
-            content={message.content || "Preparing grounded answer..."}
+            content={
+              message.status === "failed"
+                ? generationFailureMessage
+                : message.content || "Preparing grounded answer..."
+            }
           />
         ) : (
           <p>{message.content}</p>
         )}
       </div>
       {message.role === "assistant" &&
+        message.status !== "failed" &&
         (message.citations.length > 0 || message.citationIds.length > 0) && (
           <div className="citation-strip">
             {(message.citations.length

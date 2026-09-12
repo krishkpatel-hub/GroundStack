@@ -15,8 +15,12 @@ async def test_missing_document_returns_structured_404(monkeypatch) -> None:
         missing_document,
     )
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get(f"/api/v1/documents/{uuid4()}")
+    _set_test_principal(role="admin")
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(f"/api/v1/documents/{uuid4()}")
+    finally:
+        app.dependency_overrides.clear()
 
     assert response.status_code == 404
     assert response.json()["error"]["message"] == "Document not found."

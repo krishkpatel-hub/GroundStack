@@ -104,9 +104,9 @@ a key in a tracked file or browser-visible `NEXT_PUBLIC_*` variable.
 4. Open **Ask**, enter a question answered by the document, and inspect every citation.
 5. Ask an unsupported question to verify the insufficient-evidence response.
 
-The presentation fixture at
-[docs/presentation/groundstack-presentation-validation.md](docs/presentation/groundstack-presentation-validation.md)
-is original, neutral test content. It is not seeded automatically.
+The knowledge base starts empty. Bring a document you are authorized to process.
+There is no seeded corpus or bundled presentation document. The landing-page animation
+illustrates the workflow and does not represent stored activity.
 
 ## Verification
 
@@ -145,7 +145,7 @@ as guidance reviewed on August 19, 2026. GroundStack does not claim complete com
 
 ## Limitations
 
-- No real organization is represented by the repository or its temporary validation file.
+- No real organization or customer activity is represented by the repository.
 - A real provider request has not been verified unless the owner supplies a private provider
   configuration and completes the presentation smoke test.
 - Local development uses a single administrator identity and is not a production authentication
@@ -156,7 +156,7 @@ as guidance reviewed on August 19, 2026. GroundStack does not claim complete com
 - Process-local rate limits are suitable for one API instance, not a distributed deployment.
 
 See [docs/presentation/PRESENTATION_GUIDE.md](docs/presentation/PRESENTATION_GUIDE.md) for
-the presentation sequence, prepared questions, speaking notes, and recovery checklist.
+the presentation sequence, provider setup, and recovery checklist.
 
 ## Documentation
 

@@ -47,7 +47,7 @@ async function mockApi(
       json: [
         {
           id: conversationId,
-          title: "Presentation validation",
+          title: "Configuration procedure",
           archived: false,
           created_at: "2026-08-19T12:00:00Z",
           updated_at: "2026-08-19T12:10:00Z",
@@ -66,7 +66,7 @@ async function mockApi(
             conversation_id: conversationId,
             role: "user",
             status: "completed",
-            content: "What does GS-DEMO-217 mean?",
+            content: "What does CFG-218 mean?",
             grounding_status: null,
             retrieval_run_id: null,
             generation_run_id: null,
@@ -88,7 +88,7 @@ async function mockApi(
                   role: "assistant",
                   status: "completed",
                   content:
-                    "GS-DEMO-217 identifies a configuration revision mismatch. [S1]",
+                    "CFG-218 identifies a configuration revision mismatch. [S1]",
                   grounding_status: "grounded",
                   retrieval_run_id: null,
                   generation_run_id: null,
@@ -104,15 +104,14 @@ async function mockApi(
                       document_id: documentId,
                       document_version: 1,
                       chunk_id: "55555555-5555-5555-5555-555555555555",
-                      title: "GroundStack Presentation Validation Document",
-                      source_display_name:
-                        "groundstack-presentation-validation.md",
+                      title: "Configuration reference",
+                      source_display_name: "configuration-reference.md",
                       source_type: "file",
                       source_uri: null,
                       section_path: "Meaning",
                       page_number: null,
                       excerpt:
-                        "GS-DEMO-217 means the validation worker could not confirm the active configuration revision.",
+                        "CFG-218 means the validation worker could not confirm the active configuration revision.",
                       final_rank: 1,
                     },
                   ],
@@ -150,10 +149,10 @@ async function mockApi(
             id: documentId,
             source_id: "44444444-4444-4444-4444-444444444444",
             source_type: "file",
-            display_name: "groundstack-presentation-validation.md",
+            display_name: "configuration-reference.md",
             source_status: "active",
             version: 1,
-            title: "GroundStack Presentation Validation Document",
+            title: "Configuration reference",
             mime_type: "text/markdown",
             content_checksum: "demo-checksum",
             chunk_count: 2,
@@ -176,7 +175,7 @@ async function mockApi(
             position: 1,
             heading_path: ["Meaning"],
             content:
-              "GS-DEMO-217 means the validation worker could not confirm the active configuration revision.",
+              "CFG-218 means the validation worker could not confirm the active configuration revision.",
             token_count: 12,
             chunk_checksum: "chunk",
             embedding_model: "demo",
@@ -196,7 +195,7 @@ async function mockApi(
     options.onChatStream?.();
     const body = route.request().postDataJSON() as { question?: string };
     const unsupported = body.question?.includes("parental-leave");
-    const citationEvent = `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"GroundStack Presentation Validation Document","source_display_name":"groundstack-presentation-validation.md","source_type":"file","source_uri":null,"section_path":"Meaning","page_number":null,"excerpt":"GS-DEMO-217 means the validation worker could not confirm the active configuration revision.","final_rank":1}]}\n\n`;
+    const citationEvent = `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"Configuration reference","source_display_name":"configuration-reference.md","source_type":"file","source_uri":null,"section_path":"Meaning","page_number":null,"excerpt":"CFG-218 means the validation worker could not confirm the active configuration revision.","final_rank":1}]}\n\n`;
     return route.fulfill({
       headers: { "content-type": "text/event-stream" },
       body: [
@@ -216,8 +215,8 @@ async function mockApi(
               ]
             : [
                 `event: generation_started\ndata: {}\n\n`,
-                `event: token\ndata: {"token":"GS-DEMO-217 means the validation worker could not confirm the active configuration revision. Refresh configuration, restart the worker, and confirm validation_status=ready. [S1]"}\n\n`,
-                `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"GS-DEMO-217 means the validation worker could not confirm the active configuration revision. Refresh configuration, restart the worker, and confirm validation_status=ready. [S1]","grounding_status":"grounded"}\n\n`,
+                `event: token\ndata: {"token":"CFG-218 means the validation worker could not confirm the active configuration revision. Refresh configuration, restart the worker, and confirm validation_status=ready. [S1]"}\n\n`,
+                `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"CFG-218 means the validation worker could not confirm the active configuration revision. Refresh configuration, restart the worker, and confirm validation_status=ready. [S1]","grounding_status":"grounded"}\n\n`,
                 `event: completed\ndata: {}\n\n`,
               ]),
       ].join(""),
@@ -252,16 +251,12 @@ test("landing page opens the workspace and completes a cited answer", async ({
   await page.goto("/ask");
   await expect(page.getByRole("heading", { name: "Workspace" })).toBeVisible();
   await expect(
-    page.getByText("Approved knowledge only", { exact: true }),
+    page.getByRole("heading", { name: "Ask your knowledge base" }),
   ).toBeVisible();
-  await page
-    .getByRole("button", {
-      name: "What does the error code in this document mean?",
-    })
-    .click();
+  await expect(page.getByRole("textbox", { name: "Question" })).toHaveValue("");
   await page
     .getByRole("textbox", { name: "Question" })
-    .fill("What does GS-DEMO-217 mean, and how should I resolve it?");
+    .fill("What does CFG-218 mean, and how should I resolve it?");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(
     page.getByText("validation worker could not confirm"),
@@ -271,9 +266,7 @@ test("landing page opens the workspace and completes a cited answer", async ({
   await expect(
     page.getByRole("dialog", { name: "Source evidence" }),
   ).toBeVisible();
-  await expect(
-    page.getByText("GroundStack Presentation Validation Document"),
-  ).toBeVisible();
+  await expect(page.getByText("Configuration reference")).toBeVisible();
   const closeSource = page
     .getByRole("dialog", { name: "Source evidence" })
     .getByRole("button", { name: "Close source viewer" });
@@ -308,7 +301,7 @@ test("saved feedback is restored with conversation history", async ({
   await page.getByRole("button", { name: "[S1]" }).click();
   await expect(
     page.getByRole("dialog", { name: "Source evidence" }),
-  ).toContainText("GS-DEMO-217 means the validation worker");
+  ).toContainText("CFG-218 means the validation worker");
 });
 
 test("chat submission is guarded against rapid duplicate sends", async ({
@@ -322,11 +315,8 @@ test("chat submission is guarded against rapid duplicate sends", async ({
   });
   await page.goto("/ask");
   await page
-    .getByLabel("Example questions")
-    .getByRole("button", {
-      name: "What does the error code in this document mean?",
-    })
-    .click();
+    .getByRole("textbox", { name: "Question" })
+    .fill("What does CFG-218 mean?");
   const send = page.getByRole("button", { name: "Send" });
   await Promise.all([send.dispatchEvent("click"), send.dispatchEvent("click")]);
   await expect(
@@ -341,11 +331,8 @@ test("provider failure does not render raw errors as cited answers", async ({
   await mockApi(page, "admin", { failGeneration: true });
   await page.goto("/ask");
   await page
-    .getByLabel("Example questions")
-    .getByRole("button", {
-      name: "What does the error code in this document mean?",
-    })
-    .click();
+    .getByRole("textbox", { name: "Question" })
+    .fill("What does CFG-218 mean?");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(
     page.getByText(
@@ -354,6 +341,9 @@ test("provider failure does not render raw errors as cited answers", async ({
   ).toHaveCount(1);
   await expect(page.getByText("fake http_500")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "[S1]" })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Question" })).toHaveValue(
+    "What does CFG-218 mean?",
+  );
   await expect(
     page.getByText("Generation failed", { exact: true }),
   ).toBeVisible();
@@ -424,6 +414,169 @@ test("document upload rejects unsupported file types before submission", async (
   expect(uploadRequests).toBe(0);
 });
 
+test("empty files are rejected without uploading", async ({ page }) => {
+  await mockApi(page);
+  let requests = 0;
+  await page.route("**/api/v1/ingestions/files", async (route) => {
+    requests += 1;
+    await route.abort();
+  });
+  await page.goto("/knowledge");
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "empty.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.alloc(0),
+  });
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "is empty",
+  );
+  expect(requests).toBe(0);
+});
+
+test("failed excerpt loads can be retried", async ({ page }) => {
+  await mockApi(page);
+  let attempts = 0;
+  await page.route(
+    `**/api/v1/documents/${documentId}/chunks?**`,
+    async (route) => {
+      attempts += 1;
+      if (attempts === 1)
+        await route.fulfill({
+          status: 503,
+          json: { detail: "Source excerpts unavailable. Try again." },
+        });
+      else
+        await route.fulfill({
+          json: {
+            total: 1,
+            items: [
+              {
+                id: "chunk",
+                position: 0,
+                heading_path: [],
+                content: "Refresh the configuration.",
+              },
+            ],
+          },
+        });
+    },
+  );
+  await page.goto("/knowledge");
+  await page.getByRole("button", { name: "Source excerpts" }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "Source excerpts unavailable",
+  );
+  await page.getByRole("button", { name: "Source excerpts" }).click();
+  await expect(
+    page
+      .getByText("Refresh the configuration.", { exact: true })
+      .filter({ visible: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  expect(attempts).toBe(2);
+});
+
+test("new chat ignores a late conversation response", async ({ page }) => {
+  await mockApi(page);
+  let releaseResponse: (() => void) | undefined;
+  const responseGate = new Promise<void>((resolve) => {
+    releaseResponse = resolve;
+  });
+  await page.route(
+    `**/api/v1/conversations/${conversationId}/messages`,
+    async (route) => {
+      await responseGate;
+      await route.fulfill({
+        json: [
+          {
+            id: "late-message",
+            role: "user",
+            content: "Stale history response",
+            status: "completed",
+            citations: [],
+          },
+        ],
+      });
+    },
+  );
+  await page.goto("/ask");
+  await page.getByRole("button", { name: /Configuration procedure/ }).click();
+  await page.getByRole("button", { name: "New chat" }).click();
+  const returned = page.waitForResponse(
+    `**/api/v1/conversations/${conversationId}/messages`,
+  );
+  releaseResponse?.();
+  await returned;
+  await expect(
+    page.getByRole("heading", { name: "Ask your knowledge base" }),
+  ).toBeVisible();
+  await expect(page.getByText("Stale history response")).toHaveCount(0);
+});
+
+test("conversation mutation failures stay recoverable", async ({ page }) => {
+  await mockApi(page);
+  await page.route(`**/api/v1/conversations/${conversationId}`, (route) =>
+    route.fulfill({
+      status: 503,
+      json: { detail: "Conversation service unavailable. Try again." },
+    }),
+  );
+  await page.goto("/ask");
+  await page.getByRole("button", { name: /Configuration procedure/ }).click();
+  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Conversation title" })
+    .fill("Updated title");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "Conversation service unavailable",
+  );
+  await expect(
+    page.getByRole("textbox", { name: "Conversation title" }),
+  ).toHaveValue("Updated title");
+  await expect(
+    page.getByRole("button", { name: "Save", exact: true }),
+  ).toBeEnabled();
+});
+
+test("failed processing retries the original file", async ({ page }) => {
+  await mockApi(page);
+  let attempts = 0;
+  await page.route("**/api/v1/ingestions/files", (route) => {
+    attempts += 1;
+    return route.fulfill({
+      json: { job_id: `job-${attempts}`, status: "queued" },
+    });
+  });
+  await page.route("**/api/v1/ingestions/job-*", (route) =>
+    route.fulfill({
+      json: {
+        id: `job-${attempts}`,
+        status: attempts === 1 ? "failed" : "completed",
+        progress: 100,
+        error:
+          attempts === 1
+            ? { message: "Embedding provider unavailable." }
+            : null,
+      },
+    }),
+  );
+  await page.goto("/knowledge");
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "reference.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("Refresh the configuration."),
+  });
+  await page.getByRole("button", { name: "Retry processing" }).click();
+  await expect(
+    page.getByRole("button", { name: "Retry processing" }),
+  ).toHaveCount(0);
+  await expect(page.getByText("Embedding provider unavailable.")).toHaveCount(
+    0,
+  );
+  expect(attempts).toBe(2);
+});
+
 test("anonymous navigation hides admin destinations", async ({ page }) => {
   await mockApi(page, "anonymous");
   await page.goto("/");
@@ -462,6 +615,23 @@ test("api connectivity errors are written for users instead of hidden", async ({
   await expect(
     page.getByText("GroundStack cannot reach the API"),
   ).toBeVisible();
+});
+
+test("connection retry restores authenticated navigation", async ({ page }) => {
+  await mockApi(page);
+  let unavailable = true;
+  await page.route("**/api/v1/**", (route) =>
+    unavailable ? route.abort("connectionrefused") : route.fallback(),
+  );
+  await page.goto("/ask");
+  const alerts = page.getByRole("main").getByRole("alert");
+  await expect(alerts).toHaveCount(1);
+  await expect(page.getByRole("tab", { name: "Documents" })).toHaveCount(0);
+  unavailable = false;
+  await page.getByRole("button", { name: "Retry connection" }).click();
+  await expect(alerts).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: "Documents" })).toBeVisible();
+  await expect(page.getByText("Admin controls visible")).toBeVisible();
 });
 
 test("mobile navigation and axe scan pass the core landing page", async ({

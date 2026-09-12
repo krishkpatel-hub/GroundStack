@@ -42,7 +42,7 @@ def test_message_response_includes_persisted_feedback() -> None:
         document_id=uuid4(),
         document_version=1,
         chunk_id=uuid4(),
-        title="Presentation validation",
+        title="Configuration procedure",
         source_display_name="validation.md",
         source_type="file",
         source_uri="file://validation.md",

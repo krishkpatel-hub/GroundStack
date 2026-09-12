@@ -2,6 +2,7 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import pool
+from sqlalchemy.dialects.postgresql.base import ischema_names
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.settings import get_settings
@@ -25,7 +26,10 @@ from app.models.discord import (
     DiscordInteraction,
     DiscordJob,
 )
-from app.models.knowledge import Document, DocumentChunk, IngestionJob, KnowledgeSource
+from app.models.knowledge import Document, DocumentChunk, IngestionJob, KnowledgeSource, Vector
+
+# Reflect pgvector so autogeneration checks its dimensions instead of ignoring an unknown type.
+ischema_names["vector"] = Vector
 
 config = context.config
 if config.config_file_name is not None:

@@ -83,6 +83,8 @@ export function documentStatusClass(status: string) {
 }
 
 export function validateKnowledgeFile(file: File): string | null {
+  if (file.size === 0)
+    return `${file.name} is empty. Choose a document containing text.`;
   if (file.size > MAX_UPLOAD_SIZE_BYTES) {
     return `${file.name} is larger than the 10 MB upload limit.`;
   }

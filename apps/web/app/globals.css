@@ -1573,7 +1573,7 @@ select:focus-visible {
 
 .chat-surface {
   display: grid;
-  min-height: 620px;
+  min-height: 0;
   grid-template-rows: minmax(0, 1fr) auto;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -1583,66 +1583,8 @@ select:focus-visible {
 }
 
 .message-list {
-  min-height: 380px;
+  min-height: 0;
   padding: 20px;
-}
-
-.demo-workspace-note {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  border-color: #cad9f7;
-  border-left: 3px solid var(--accent);
-  background: #f4f7ff;
-  padding: 16px;
-}
-
-.demo-workspace-note h2 {
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.demo-workspace-note p:not(.eyebrow) {
-  max-width: 760px;
-  margin-top: 4px;
-  color: var(--graphite);
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-.suggestion-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 8px;
-}
-
-.suggestion-button {
-  min-height: 44px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  padding: 10px 12px;
-  text-align: left;
-  transition:
-    background-color 140ms ease,
-    border-color 140ms ease,
-    box-shadow 140ms ease;
-}
-
-.suggestion-button:hover {
-  border-color: #b8ccf8;
-  background: #f6f8ff;
-  box-shadow: var(--shadow-sm);
-}
-
-.suggestion-button:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
 }
 
 .empty-chat {
@@ -2167,16 +2109,12 @@ select:focus-visible {
   }
 
   .chat-surface {
-    min-height: 540px;
+    min-height: 0;
   }
 
   .message-list {
-    min-height: 320px;
+    min-height: 0;
     padding: 16px;
-  }
-
-  .demo-workspace-note {
-    flex-direction: column;
   }
 
   .desktop-inventory {

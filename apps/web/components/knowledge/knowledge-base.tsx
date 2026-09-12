@@ -77,6 +77,11 @@ export function KnowledgeBase({
   const [deleteTarget, setDeleteTarget] = useState<DocumentItem | null>(null);
   const [fileSubmitting, setFileSubmitting] = useState(false);
   const [urlSubmitting, setUrlSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const uploadInFlightRef = useRef(false);
+  const urlInFlightRef = useRef(false);
+  const deleteInFlightRef = useRef(false);
+  const retrySourcesRef = useRef(new Map<string, File | string>());
   const deleteDialogRef = useRef<HTMLElement | null>(null);
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -110,7 +115,14 @@ export function KnowledgeBase({
         const refreshed = await Promise.all(
           jobs.map((job) => fetchIngestionJob(job.id)),
         );
-        setJobs(refreshed);
+        setJobs((current) =>
+          current.map(
+            (job) => refreshed.find((item) => item.id === job.id) ?? job,
+          ),
+        );
+        refreshed
+          .filter((job) => ["completed", "skipped"].includes(job.status))
+          .forEach((job) => retrySourcesRef.current.delete(job.id));
         if (
           refreshed.some((job) => ["completed", "skipped"].includes(job.status))
         ) {
@@ -156,7 +168,7 @@ export function KnowledgeBase({
   }, [deleteTarget]);
 
   async function acceptFiles(files: FileList | File[]) {
-    if (fileSubmitting) return;
+    if (uploadInFlightRef.current) return;
     setError(null);
     const fileList = Array.from(files);
     if (fileList.length === 0) return;
@@ -169,35 +181,56 @@ export function KnowledgeBase({
       return;
     }
     setFileSubmitting(true);
+    uploadInFlightRef.current = true;
     try {
-      const accepted = await Promise.all(
+      const accepted = await Promise.allSettled(
         fileList.map((file) => uploadKnowledgeFile(file)),
       );
-      setJobs((current) => [...accepted.map(createOptimisticJob), ...current]);
+      const newJobs: IngestionJob[] = [];
+      accepted.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          retrySourcesRef.current.set(result.value.job_id, fileList[index]);
+          newJobs.push(createOptimisticJob(result.value));
+        } else {
+          setError(
+            friendlyApiError(
+              result.reason,
+              "Upload failed. Choose the file again to retry.",
+            ).message,
+          );
+        }
+      });
+      setJobs((current) => [...newJobs, ...current]);
     } catch (uploadError) {
       setError(friendlyApiError(uploadError, "Upload failed").message);
     } finally {
+      uploadInFlightRef.current = false;
       setFileSubmitting(false);
     }
   }
 
   async function submitUrl() {
-    if (!url.trim() || urlSubmitting) return;
+    if (!url.trim() || urlInFlightRef.current) return;
+    urlInFlightRef.current = true;
     setError(null);
     setUrlSubmitting(true);
     try {
       const job = await submitKnowledgeUrl(url.trim());
+      retrySourcesRef.current.set(job.job_id, url.trim());
       setJobs((current) => [createOptimisticJob(job), ...current]);
       setUrl("");
     } catch (urlError) {
       setError(friendlyApiError(urlError, "URL ingestion failed").message);
     } finally {
+      urlInFlightRef.current = false;
       setUrlSubmitting(false);
     }
   }
 
   async function confirmDeleteDocument() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleteInFlightRef.current) return;
+    deleteInFlightRef.current = true;
+    setDeleting(true);
     setError(null);
     try {
       await deleteDocument(deleteTarget.id);
@@ -208,11 +241,46 @@ export function KnowledgeBase({
         delete next[deleteTarget.id];
         return next;
       });
-      await loadDocuments(Math.max(0, offset - pageSize));
+      const nextOffset =
+        documents?.items.length === 1 ? Math.max(0, offset - pageSize) : offset;
+      setOffset(nextOffset);
+      await loadDocuments(nextOffset);
     } catch (deleteError) {
       setError(
         friendlyApiError(deleteError, "Document deletion failed").message,
       );
+    } finally {
+      deleteInFlightRef.current = false;
+      setDeleting(false);
+    }
+  }
+
+  async function retryJob(jobId: string) {
+    const source = retrySourcesRef.current.get(jobId);
+    if (!source || uploadInFlightRef.current || urlInFlightRef.current) return;
+    uploadInFlightRef.current = true;
+    setFileSubmitting(true);
+    setError(null);
+    try {
+      const accepted =
+        typeof source === "string"
+          ? await submitKnowledgeUrl(source)
+          : await uploadKnowledgeFile(source);
+      retrySourcesRef.current.delete(jobId);
+      retrySourcesRef.current.set(accepted.job_id, source);
+      setJobs((current) =>
+        current.map((job) =>
+          job.id === jobId ? createOptimisticJob(accepted) : job,
+        ),
+      );
+    } catch (retryError) {
+      setError(
+        friendlyApiError(retryError, "Could not retry processing. Try again.")
+          .message,
+      );
+    } finally {
+      uploadInFlightRef.current = false;
+      setFileSubmitting(false);
     }
   }
 
@@ -220,6 +288,7 @@ export function KnowledgeBase({
     const next = expanded === documentId ? null : documentId;
     setExpanded(next);
     if (next && !chunks[next]) {
+      setError(null);
       setChunks((current) => ({
         ...current,
         [next]: { total: 0, limit: 10, offset: 0, items: [] },
@@ -228,6 +297,12 @@ export function KnowledgeBase({
         const page = await fetchDocumentChunks(next, 10, 0);
         setChunks((current) => ({ ...current, [next]: page }));
       } catch (chunkError) {
+        setChunks((current) => {
+          const nextChunks = { ...current };
+          delete nextChunks[next];
+          return nextChunks;
+        });
+        setExpanded((current) => (current === next ? null : current));
         setError(
           friendlyApiError(chunkError, "Could not load source excerpts")
             .message,
@@ -416,6 +491,17 @@ export function KnowledgeBase({
                       {job.error.message}
                     </p>
                   )}
+                  {job.status === "failed" && (
+                    <button
+                      className="button mt-2"
+                      type="button"
+                      disabled={fileSubmitting || urlSubmitting}
+                      onClick={() => void retryJob(job.id)}
+                    >
+                      <RefreshCw className="h-4 w-4" aria-hidden /> Retry
+                      processing
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -442,7 +528,7 @@ export function KnowledgeBase({
           {!loadingDocs && documents?.items.length === 0 && (
             <p className="mt-6 max-w-xl text-sm leading-6 text-[var(--graphite)]">
               No documents yet. Upload a supported file or submit an allowed
-              documentation URL to begin.
+              documentation URL. Wait for Ready before asking a question.
             </p>
           )}
 
@@ -551,7 +637,7 @@ export function KnowledgeBase({
                                               "Root"}
                                           </span>{" "}
                                         </div>
-                                        <p className="mt-1 line-clamp-5 whitespace-pre-wrap text-sm leading-6">
+                                        <p className="mt-1 whitespace-pre-wrap text-sm leading-6">
                                           {chunk.content}
                                         </p>
                                       </section>
@@ -658,7 +744,7 @@ export function KnowledgeBase({
                                   {chunk.heading_path.join(" / ") || "Root"}
                                 </span>{" "}
                               </div>
-                              <p className="mt-1 line-clamp-5 whitespace-pre-wrap text-sm leading-6">
+                              <p className="mt-1 whitespace-pre-wrap text-sm leading-6">
                                 {chunk.content}
                               </p>
                             </section>
@@ -742,9 +828,10 @@ export function KnowledgeBase({
               <button
                 className="button button-danger"
                 type="button"
+                disabled={deleting}
                 onClick={() => void confirmDeleteDocument()}
               >
-                Delete document
+                {deleting ? "Deleting" : "Delete document"}
               </button>
             </div>
           </section>

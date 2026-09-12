@@ -4,6 +4,8 @@ export const API_BASE_URL =
 export const API_UNAVAILABLE_MESSAGE =
   "GroundStack cannot reach the API. Start the local backend, then try again.";
 
+export const API_RETRY_EVENT = "groundstack:retry-connection";
+
 export function friendlyApiError(error: unknown, fallback: string): Error {
   if (error instanceof TypeError) {
     return new Error(API_UNAVAILABLE_MESSAGE);

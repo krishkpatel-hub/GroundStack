@@ -14,6 +14,7 @@ from app.services.ai.types import (
 )
 from app.services.retrieval.fusion import (
     build_citations,
+    filter_query_overlap_candidates,
     filter_relevant_candidates,
     fuse_candidates,
     select_diverse_candidates,
@@ -140,6 +141,10 @@ class HybridRetriever(Retriever):
                 )
                 if reranking_applied
                 else reranked
+            )
+            relevance_input = filter_query_overlap_candidates(
+                relevance_input,
+                query=query.text,
             )
             selected = select_diverse_candidates(
                 relevance_input,

@@ -1,154 +1,95 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
-from datetime import UTC, datetime
+from dataclasses import replace
 from pathlib import Path
 
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
 from app.db.session import async_session_factory
-from app.models.conversation import (
-    Conversation,
-    EvaluationRun,
-    Message,
-    MessageFeedback,
-    TrainingCandidate,
-)
-from app.models.knowledge import IngestionJob
-from app.services.ai.types import EmbeddingRequest, EmbeddingResult
+from app.models.knowledge import KnowledgeSource
 from app.services.ingestion.orchestrator import IngestionOrchestrator
 from app.services.ingestion.sources import file_input_from_path
 
-
-class DemoEmbeddingProvider:
-    active_model = "demo-deterministic-384"
-
-    async def embed(self, request: EmbeddingRequest) -> list[EmbeddingResult]:
-        return [
-            EmbeddingResult(
-                text=text, vector=[float((index + len(text)) % 7) / 7 for index in range(384)]
-            )
-            for text in request.inputs
-        ]
+CORPUS_ID = "northstar-systems-support-demo"
+CORPUS_VERSION = "northstar-support-v1"
+CORPUS_ROOT = Path("docs/demo-corpus/northstar")
 
 
-async def ingest_demo_docs(root: Path) -> None:
-    orchestrator = IngestionOrchestrator(embedding_provider=DemoEmbeddingProvider())
-    for path in sorted((root / "apps/api/dev-data/knowledge-base").glob("*")):
-        job_id = await orchestrator.create_job()
-        await orchestrator.ingest(job_id, file_input_from_path(path))
+def corpus_paths(root: Path) -> list[Path]:
+    return sorted(path for path in root.glob("*.md") if path.is_file())
 
 
-async def seed_records() -> None:
+def northstar_input(path: Path):
+    payload = file_input_from_path(path)
+    return replace(
+        payload,
+        source_metadata={
+            **payload.source_metadata,
+            "corpus_id": CORPUS_ID,
+            "corpus_version": CORPUS_VERSION,
+            "organization": "Northstar Systems",
+            "fictional_demo": True,
+        },
+    )
+
+
+async def reset_northstar_corpus() -> int:
     async with async_session_factory() as session:
-        conversation = Conversation(
-            title="Demo: pgvector setup",
-            owner_subject="demo:standard-user",
-            archived=False,
-            last_message_at=datetime.now(UTC),
+        result = await session.execute(
+            select(KnowledgeSource).options(selectinload(KnowledgeSource.documents))
         )
-        session.add(conversation)
-        await session.flush()
-        user = Message(
-            conversation_id=conversation.id,
-            owner_subject=conversation.owner_subject,
-            role="user",
-            status="completed",
-            content="How do I configure pgvector for GroundStack?",
-        )
-        assistant = Message(
-            conversation_id=conversation.id,
-            owner_subject=conversation.owner_subject,
-            role="assistant",
-            status="completed",
-            content=(
-                "Use the provided PostgreSQL image with pgvector enabled, run Alembic "
-                "migrations, and verify the vector extension before ingestion. [S1]"
-            ),
-            grounding_status="grounded",
-            provider="demo",
-            model="demo-deterministic",
-            prompt_version="grounded_answer/v1",
-        )
-        insufficient = Message(
-            conversation_id=conversation.id,
-            owner_subject=conversation.owner_subject,
-            role="assistant",
-            status="completed",
-            content=(
-                "GroundStack does not have enough retrieved evidence to answer that. "
-                "Try rephrasing or ask an administrator to add the missing documentation."
-            ),
-            grounding_status="insufficient_evidence",
-            provider="demo",
-            model="demo-deterministic",
-            prompt_version="grounded_answer/v1",
-        )
-        session.add_all([user, assistant, insufficient])
-        await session.flush()
-        feedback = MessageFeedback(
-            message_id=assistant.id,
-            conversation_id=conversation.id,
-            owner_subject=conversation.owner_subject,
-            rating="negative",
-            categories=["incomplete_answer"],
-            comment="Mention migrations explicitly.",
-            suggested_correction="Include the migration command and pgvector extension check.",
-            citations_incorrect=False,
-            reported_citation_ids=[],
-            client_request_id="demo-feedback-1",
-            message_snapshot={"demo": True},
-        )
-        session.add(feedback)
-        await session.flush()
-        session.add(
-            TrainingCandidate(
-                message_id=assistant.id,
-                feedback_id=feedback.id,
-                status="pending",
-                proposed_question=user.content,
-                evidence_snapshot=[{"citation_id": "S1", "demo": True}],
-                proposed_answer=feedback.suggested_correction or assistant.content,
-                citation_references=["S1"],
-                redaction_status="pending",
-                provenance_status="pending",
-            )
-        )
-        session.add(
-            EvaluationRun(
-                name="Demo evaluation run",
-                status="completed",
-                suite_names=["generation", "prompt_injection"],
-                dataset_version="demo-seed-v1",
-                dataset_checksum="demo",
-                model_metadata={"provider": "demo", "model": "demo-deterministic"},
-                prompt_version="grounded_answer/v1",
-                retrieval_configuration={"algorithm": "hybrid-rrf-ce-v1"},
-                environment_metadata={"report_path": "evaluation/reports/demo-seed.json"},
-                aggregate_metrics={"pass_rate": 1.0, "sample_count": 4},
-                started_at=datetime.now(UTC),
-                completed_at=datetime.now(UTC),
-            )
-        )
-        session.add(
-            IngestionJob(
-                status="failed",
-                current_stage="source_validation",
-                progress=100,
-                statistics={"demo": True},
-                error={
-                    "category": "demo_validation_failure",
-                    "message": "Demo failed job for recovery workflow.",
-                },
-            )
-        )
+        sources = [
+            source
+            for source in result.scalars()
+            if source.source_metadata.get("corpus_id") == CORPUS_ID
+        ]
+        for source in sources:
+            await session.delete(source)
         await session.commit()
+        return len(sources)
 
 
-async def main() -> None:
+async def ingest_northstar_corpus(root: Path) -> list[str]:
+    paths = corpus_paths(root)
+    if not paths:
+        raise SystemExit(f"No Northstar demo documents found in {root}")
+    orchestrator = IngestionOrchestrator()
+    reports: list[str] = []
+    for path in paths:
+        job_id = await orchestrator.create_job()
+        report = await orchestrator.ingest(job_id, northstar_input(path))
+        reports.append(f"{path.name}: {report.status} ({report.chunk_count} chunks)")
+    return reports
+
+
+async def run(*, reset: bool) -> None:
     root = Path(__file__).resolve().parents[1]
-    await ingest_demo_docs(root)
-    await seed_records()
-    print("Demo data seeded: corpus, conversations, feedback, training candidate, evaluation run.")
+    corpus_root = root / CORPUS_ROOT
+    if reset:
+        deleted = await reset_northstar_corpus()
+        print(f"Reset Northstar demo corpus: deleted {deleted} source(s).")
+    reports = await ingest_northstar_corpus(corpus_root)
+    print("Seeded Northstar Systems fictional demo corpus:")
+    for line in reports:
+        print(f"- {line}")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Seed the fictional Northstar Systems support corpus."
+    )
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Delete previously seeded Northstar demo sources before reingesting.",
+    )
+    args = parser.parse_args()
+    asyncio.run(run(reset=args.reset))
+    return 0
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(main())

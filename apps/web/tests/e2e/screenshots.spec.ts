@@ -31,7 +31,7 @@ async function mockScreens(page: Page) {
       json: [
         {
           id: conversationId,
-          title: "Demo: pgvector setup",
+          title: "Demo: DB-104 support",
           archived: false,
           created_at: "2026-08-19T12:00:00Z",
           updated_at: "2026-08-19T12:10:00Z",
@@ -43,7 +43,7 @@ async function mockScreens(page: Page) {
   await page.route("**/api/v1/documents?**", (route) =>
     route.fulfill({
       json: {
-        total: 1,
+        total: 10,
         limit: 20,
         offset: 0,
         items: [
@@ -51,10 +51,10 @@ async function mockScreens(page: Page) {
             id: documentId,
             source_id: "44444444-4444-4444-4444-444444444444",
             source_type: "file",
-            display_name: "setup.md",
-            source_status: "ready",
+            display_name: "04-db-104.md",
+            source_status: "active",
             version: 1,
-            title: "GroundStack setup",
+            title: "Northstar Systems Database Error DB-104",
             mime_type: "text/markdown",
             content_checksum: "demo-checksum",
             chunk_count: 2,
@@ -75,8 +75,9 @@ async function mockScreens(page: Page) {
             id: "55555555-5555-5555-5555-555555555555",
             document_id: documentId,
             position: 1,
-            heading_path: ["Setup"],
-            content: "Run migrations after starting PostgreSQL with pgvector.",
+            heading_path: ["Meaning"],
+            content:
+              "DB-104 means the application connected to the database host but failed the schema readiness check.",
             token_count: 12,
             chunk_checksum: "chunk",
             embedding_model: "demo",
@@ -91,9 +92,9 @@ async function mockScreens(page: Page) {
       headers: { "content-type": "text/event-stream" },
       body: [
         `event: conversation\ndata: {"conversation_id":"${conversationId}"}\n\n`,
-        `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"GroundStack setup","source_display_name":"setup.md","source_type":"file","source_uri":null,"section_path":"Setup","page_number":null,"excerpt":"Run migrations after starting PostgreSQL with pgvector.","final_rank":1}]}\n\n`,
-        `event: token\ndata: {"token":"Run migrations after starting PostgreSQL with pgvector. [S1]"}\n\n`,
-        `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"Run migrations after starting PostgreSQL with pgvector. [S1]","grounding_status":"grounded"}\n\n`,
+        `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"Northstar Systems Database Error DB-104","source_display_name":"04-db-104.md","source_type":"file","source_uri":null,"section_path":"Meaning","page_number":null,"excerpt":"DB-104 means the application connected to the database host but failed the schema readiness check.","final_rank":1}]}\n\n`,
+        `event: token\ndata: {"token":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]"}\n\n`,
+        `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]","grounding_status":"grounded"}\n\n`,
         `event: completed\ndata: {}\n\n`,
       ].join(""),
     }),
@@ -119,15 +120,15 @@ test("capture portfolio screenshots", async ({ page }) => {
   await mockScreens(page);
   await page.goto("/");
   await captureAppScreenshot(page, `${out}/landing.png`);
-  await page.goto("/ask?q=How%20do%20I%20configure%20pgvector%3F");
+  await page.goto("/ask?q=What%20does%20DB-104%20mean%3F");
   await page.getByRole("button", { name: "Send" }).click();
-  await page.getByText("Run migrations after starting PostgreSQL").waitFor();
+  await page.getByText("schema readiness check").waitFor();
   await captureAppScreenshot(page, `${out}/chat-with-citations.png`);
   await page.getByRole("button", { name: "[S1]" }).click();
   await captureAppScreenshot(page, `${out}/source-viewer.png`);
   await page.goto("/knowledge");
   await captureAppScreenshot(page, `${out}/knowledge-admin.png`);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ask?q=How%20do%20I%20configure%20pgvector%3F");
+  await page.goto("/ask?q=What%20does%20DB-104%20mean%3F");
   await captureAppScreenshot(page, `${out}/mobile-chat.png`);
 });

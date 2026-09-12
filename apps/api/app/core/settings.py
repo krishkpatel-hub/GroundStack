@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     reranker_batch_size: int = 16
     reranker_device: str = "auto"
     reranking_enabled: bool = True
-    retrieval_min_reranker_score: float = 0.0
+    retrieval_min_reranker_score: float = -5.0
     persist_retrieval_queries: bool = False
     retrieval_debug_enabled: bool = True
     retrieval_timeout_seconds: float = 30.0

@@ -57,6 +57,12 @@ function statusClass(status: string) {
   return "status-label status-success";
 }
 
+function statusLabel(status: string) {
+  if (status === "failed" || status === "deleted") return "Failed";
+  if (status === "processing" || status === "queued") return "Processing";
+  return "Ready";
+}
+
 export function KnowledgeBase({
   mode = "admin",
 }: {
@@ -193,7 +199,7 @@ export function KnowledgeBase({
       description={
         mode === "activity"
           ? "Track ingestion jobs, recovery states, and document processing progress."
-          : "Ask questions and manage the documents GroundStack can use."
+          : "Northstar Systems fictional demo workspace for approved technical-support documentation."
       }
       actions={
         <button
@@ -210,6 +216,17 @@ export function KnowledgeBase({
       <div className="space-y-8">
         {mode === "admin" && (
           <section aria-labelledby="ingestion-heading" className="space-y-4">
+            <div className="demo-workspace-note">
+              <div>
+                <p className="eyebrow">Fictional demo workspace</p>
+                <h2>Northstar Systems support corpus</h2>
+                <p>
+                  These documents are original fictional examples for a
+                  private technical-support assistant. They are not customer
+                  material and do not represent production usage.
+                </p>
+              </div>
+            </div>
             <div>
               <h2 id="ingestion-heading" className="section-title">
                 Knowledge base
@@ -316,13 +333,15 @@ export function KnowledgeBase({
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                     <div className="min-w-0">
-                      <div className="font-semibold">{job.current_stage}</div>
+                      <div className="font-semibold">
+                        {statusLabel(job.status)}
+                      </div>
                       <div className="mono mt-1 truncate text-xs text-[var(--graphite)]">
                         {job.id}
                       </div>
                     </div>
                     <span className={statusClass(job.status)}>
-                      {job.status}
+                      {statusLabel(job.status)}
                     </span>
                   </div>
                   <progress
@@ -372,7 +391,7 @@ export function KnowledgeBase({
               <div className="desktop-inventory table-wrap mt-4">
                 <table className="data-table">
                   <caption className="sr-only">
-                    Ingested document versions
+                    Approved technical-support documents
                   </caption>
                   <thead>
                     <tr>
@@ -406,7 +425,7 @@ export function KnowledgeBase({
                             <td className="mono">v{document.version}</td>
                             <td>
                               <span className="status-label status-success">
-                                {document.source_status}
+                                {statusLabel(document.source_status)}
                               </span>
                             </td>
                             <td>{document.chunk_count}</td>
@@ -431,7 +450,7 @@ export function KnowledgeBase({
                                     aria-hidden
                                   />
                                 )}
-                                Sources
+                                Source excerpts
                               </button>
                             </td>
                             {mode === "admin" && (
@@ -510,8 +529,8 @@ export function KnowledgeBase({
                         <div>
                           <dt>Status</dt>
                           <dd>
-                            <span className="status-label status-success">
-                              {document.source_status}
+                              <span className="status-label status-success">
+                              {statusLabel(document.source_status)}
                             </span>
                           </dd>
                         </div>
@@ -537,7 +556,7 @@ export function KnowledgeBase({
                         ) : (
                           <ChevronRight className="h-4 w-4" aria-hidden />
                         )}
-                        Sources
+                        Source excerpts
                       </button>
                       {mode === "admin" && (
                         <button

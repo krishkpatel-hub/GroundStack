@@ -1,6 +1,36 @@
+import re
 from collections import defaultdict
 
 from app.services.ai.types import Citation, RetrievalCandidate
+
+QUERY_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "be",
+    "by",
+    "company",
+    "do",
+    "does",
+    "for",
+    "how",
+    "i",
+    "is",
+    "it",
+    "me",
+    "northstar",
+    "of",
+    "or",
+    "policy",
+    "should",
+    "systems",
+    "the",
+    "to",
+    "what",
+    "when",
+}
 
 
 def fuse_candidates(
@@ -98,6 +128,35 @@ def filter_relevant_candidates(
             relevant.append(candidate)
             continue
         candidate.exclusion_reason = "below_relevance_threshold"
+    return relevant
+
+
+def filter_query_overlap_candidates(
+    candidates: list[RetrievalCandidate],
+    *,
+    query: str,
+) -> list[RetrievalCandidate]:
+    query_terms = {
+        term
+        for term in re.findall(r"[a-z0-9]+", query.lower())
+        if len(term) > 2 and term not in QUERY_STOPWORDS
+    }
+    if not query_terms:
+        return candidates
+
+    relevant: list[RetrievalCandidate] = []
+    for candidate in candidates:
+        searchable = " ".join(
+            [
+                candidate.title,
+                candidate.chunk_content,
+                " ".join(candidate.section_path),
+            ]
+        ).lower()
+        if any(term in searchable for term in query_terms):
+            relevant.append(candidate)
+            continue
+        candidate.exclusion_reason = "no_query_term_overlap"
     return relevant
 
 

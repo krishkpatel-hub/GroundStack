@@ -5,6 +5,7 @@ import pytest
 from app.services.ai.types import RetrievalCandidate
 from app.services.retrieval.fusion import (
     build_citations,
+    filter_query_overlap_candidates,
     filter_relevant_candidates,
     fuse_candidates,
     select_diverse_candidates,
@@ -17,6 +18,7 @@ def candidate(
     chunk_id=None,
     source_id=None,
     checksum="checksum",
+    content="Run docker compose ps to inspect PostgreSQL.",
     vector_rank=None,
     lexical_rank=None,
 ) -> RetrievalCandidate:
@@ -31,7 +33,7 @@ def candidate(
         source_uri=None,
         source_type="file",
         section_path=["Install"],
-        chunk_content="Run docker compose ps to inspect PostgreSQL.",
+        chunk_content=content,
         chunk_checksum=checksum,
         vector_rank=vector_rank,
         vector_distance=0.2 if vector_rank else None,
@@ -126,6 +128,21 @@ def test_relevance_filter_removes_low_reranker_scores() -> None:
 
     assert relevant == [high]
     assert low.exclusion_reason == "below_relevance_threshold"
+
+
+def test_query_overlap_filter_removes_unrelated_organization_matches() -> None:
+    unrelated = candidate(vector_rank=1, content="Employees must enroll managed laptops.")
+    unrelated.title = "Northstar Systems Employee Device Enrollment"
+    relevant = candidate(vector_rank=2, content="DB-104 means schema readiness failed.")
+    relevant.title = "Northstar Systems Database Error DB-104"
+
+    filtered = filter_query_overlap_candidates(
+        [unrelated, relevant],
+        query="What does DB-104 mean?",
+    )
+
+    assert filtered == [relevant]
+    assert unrelated.exclusion_reason == "no_query_term_overlap"
 
 
 def test_citation_numbering_matches_final_order() -> None:

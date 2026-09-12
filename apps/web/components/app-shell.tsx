@@ -74,6 +74,17 @@ type StreamStage =
   | "Stopped"
   | "Failed";
 
+const demoQuestions = [
+  "What does DB-104 mean, and how should I resolve it?",
+  "How do I configure the company VPN?",
+  "What should I do before rolling back a failed deployment?",
+  "When should an incident be classified as severity one?",
+  "How do I request access to the analytics database?",
+  "What is Northstar Systems' parental-leave policy?",
+] as const;
+
+const activeConversationStorageKey = "groundstack.activeConversationId";
+
 function newLocalId(prefix: string) {
   return `${prefix}-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
 }
@@ -105,6 +116,7 @@ export function AppShell({
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const citationButtonRef = useRef<HTMLButtonElement | null>(null);
+  const restoredConversationRef = useRef(false);
 
   const loading =
     stage === "Retrieving evidence" || stage === "Generating answer";
@@ -131,7 +143,23 @@ export function AppShell({
     let active = true;
     fetchConversations()
       .then((items) => {
-        if (active) setConversations(items.filter((item) => !item.archived));
+        if (!active) return;
+        const visibleConversations = items.filter((item) => !item.archived);
+        setConversations(visibleConversations);
+        if (!restoredConversationRef.current) {
+          const storedConversationId = window.localStorage.getItem(
+            activeConversationStorageKey,
+          );
+          if (
+            storedConversationId &&
+            visibleConversations.some(
+              (conversation) => conversation.id === storedConversationId,
+            )
+          ) {
+            restoredConversationRef.current = true;
+            void selectConversation(storedConversationId);
+          }
+        }
       })
       .catch(() => {
         if (active) setConversations([]);
@@ -219,32 +247,44 @@ export function AppShell({
   async function selectConversation(nextConversationId: string) {
     abortRef.current?.abort();
     setConversationId(nextConversationId);
+    window.localStorage.setItem(
+      activeConversationStorageKey,
+      nextConversationId,
+    );
     setError(null);
     setStage("Idle");
     setAnnounce("Conversation loaded");
     setDeleteArmed(false);
     setEditingTitle(false);
-    const rows = await fetchConversationMessages(nextConversationId);
-    setMessages(
-      rows
-        .filter((row) => row.role === "user" || row.role === "assistant")
-        .map((row) => ({
-          localId: row.id,
-          id: row.id,
-          role: row.role as ChatRole,
-          content: row.content,
-          status: row.status === "completed" ? "completed" : "failed",
-          groundingStatus: row.grounding_status,
-          citations: [],
-          citationIds: row.citations,
-        })),
-    );
+    try {
+      const rows = await fetchConversationMessages(nextConversationId);
+      setMessages(
+        rows
+          .filter((row) => row.role === "user" || row.role === "assistant")
+          .map((row) => ({
+            localId: row.id,
+            id: row.id,
+            role: row.role as ChatRole,
+            content: row.content,
+            status: row.status === "completed" ? "completed" : "failed",
+            groundingStatus: row.grounding_status,
+            citations: [],
+            citationIds: row.citations,
+          })),
+      );
+    } catch (loadError) {
+      setError(
+        friendlyApiError(loadError, "Could not load this conversation.").message,
+      );
+      setAnnounce("Conversation could not be loaded");
+    }
   }
 
   function startNewConversation() {
     abortRef.current?.abort();
     abortRef.current = null;
     setConversationId(null);
+    window.localStorage.removeItem(activeConversationStorageKey);
     setMessages([]);
     setQuestion("");
     setError(null);
@@ -269,6 +309,7 @@ export function AppShell({
   async function deleteSelectedConversation() {
     if (!conversationId || !deleteArmed) return;
     await deleteConversation(conversationId);
+    window.localStorage.removeItem(activeConversationStorageKey);
     setConversations((current) =>
       current.filter((item) => item.id !== conversationId),
     );
@@ -330,6 +371,10 @@ export function AppShell({
       )) {
         if (item.event === "conversation" && item.data.conversation_id) {
           setConversationId(item.data.conversation_id);
+          window.localStorage.setItem(
+            activeConversationStorageKey,
+            item.data.conversation_id,
+          );
         }
         if (item.event === "retrieval_completed") {
           setStage("Generating answer");
@@ -415,7 +460,7 @@ export function AppShell({
   return (
     <AppFrame
       title="Workspace"
-      description="Ask questions and manage the documents GroundStack can use."
+      description="Northstar Systems fictional demo workspace for approved technical-support documentation."
       actions={
         <button className="button" type="button" onClick={startNewConversation}>
           <MessageSquarePlus className="h-4 w-4" aria-hidden />
@@ -544,6 +589,23 @@ export function AppShell({
             {announce}
           </div>
           <div className="message-list">
+            <section
+              className="demo-workspace-note"
+              aria-labelledby="northstar-demo-title"
+            >
+              <div>
+                <p className="eyebrow">Fictional demo workspace</p>
+                <h2 id="northstar-demo-title">Northstar Systems support</h2>
+                <p>
+                  This local demo uses original fictional support documents.
+                  GroundStack should answer only from the approved corpus and
+                  show source excerpts for review.
+                </p>
+              </div>
+              <Link className="button no-underline" href="/knowledge">
+                View documents
+              </Link>
+            </section>
             {documentsLoadError && (
               <ApiConnectionAlert
                 message={documentsLoadError}
@@ -578,9 +640,27 @@ export function AppShell({
                   Ask your knowledge base
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
-                  Ask a question and review the sources returned with the
-                  answer.
+                  Try one of the Northstar demo questions, or ask your own
+                  question about the seeded support documents.
                 </p>
+                <div
+                  className="suggestion-grid mt-4"
+                  aria-label="Example questions"
+                >
+                  {demoQuestions.map((demoQuestion) => (
+                    <button
+                      key={demoQuestion}
+                      className="suggestion-button"
+                      type="button"
+                      onClick={() => {
+                        setQuestion(demoQuestion);
+                        setAnnounce("Example question filled");
+                      }}
+                    >
+                      {demoQuestion}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((message) => (
@@ -744,7 +824,7 @@ const MessageBubble = memo(function MessageBubble({
   return (
     <article className={`message message-${message.role}`}>
       <div className="message-label">
-        {message.role === "user" ? "You" : "GroundStack"}
+        {message.role === "user" ? "You" : "GroundStack answer"}
         {message.status === "streaming" && (
           <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
         )}
@@ -828,9 +908,11 @@ function SourcePanel({
         <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] pb-3">
           <div>
             <h2 id="source-panel-title" className="section-title">
-              {citation.title || "Source passage"}
+              Source evidence
             </h2>
             <p className="mt-1 text-sm leading-6 text-[var(--graphite)]">
+              {citation.title || "Source passage"}
+              {" - "}
               {citation.source_display_name}
               {citation.section_path ? `, ${citation.section_path}` : ""}
               {citation.page_number ? `, page ${citation.page_number}` : ""}

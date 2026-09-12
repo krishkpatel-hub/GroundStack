@@ -1,4 +1,4 @@
-.PHONY: setup dev test lint format typecheck db-up db-down migrate migration-check predeploy deploy-check migrate-production seed-demo verify-demo-data db-smoke discord-worker-health discord-worker-once discord-commands-json api-dev web-dev eval-retrieval benchmark-retrieval benchmark-import-check benchmark-smoke benchmark-volume-300 benchmark-burst benchmark-soak-short benchmark-ollama benchmark-real-provider failure-test integrity-check capacity-report capacity-cost validate-training-data prepare-training-data training-preflight train-qlora compare-models training-test review-training-candidates export-approved-training-data eval eval-generation eval-security compare-prompts load-smoke-fake load-sustained-fake load-300-real
+.PHONY: setup dev test lint format typecheck db-up db-down migrate migration-check predeploy deploy-check migrate-production seed-demo reset-demo verify-demo-data db-smoke discord-worker-health discord-worker-once discord-commands-json api-dev web-dev eval-retrieval benchmark-retrieval benchmark-import-check benchmark-smoke benchmark-volume-300 benchmark-burst benchmark-soak-short benchmark-ollama benchmark-real-provider failure-test integrity-check capacity-report capacity-cost validate-training-data prepare-training-data training-preflight train-qlora compare-models training-test review-training-candidates export-approved-training-data eval eval-generation eval-security compare-prompts load-smoke-fake load-sustained-fake load-300-real
 
 setup:
 	npm install
@@ -54,6 +54,9 @@ migrate-production:
 
 seed-demo:
 	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/seed_demo.py
+
+reset-demo:
+	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/seed_demo.py --reset
 
 verify-demo-data:
 	cd apps/api && . .venv/bin/activate && cd ../.. && PYTHONPATH=apps/api python scripts/verify_demo_data.py

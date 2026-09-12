@@ -2,29 +2,49 @@ from __future__ import annotations
 
 import asyncio
 
-from sqlalchemy import func, select
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.db.session import async_session_factory
-from app.models.knowledge import Document, DocumentChunk, KnowledgeSource
+from app.models.knowledge import Document, KnowledgeSource
+
+CORPUS_ID = "northstar-systems-support-demo"
+EXPECTED_DOCUMENTS = 10
 
 
-async def _counts() -> tuple[int, int, int]:
+async def _northstar_counts() -> tuple[int, int, int]:
     async with async_session_factory() as session:
-        sources = await session.scalar(select(func.count()).select_from(KnowledgeSource))
-        documents = await session.scalar(select(func.count()).select_from(Document))
-        chunks = await session.scalar(select(func.count()).select_from(DocumentChunk))
-        return int(sources or 0), int(documents or 0), int(chunks or 0)
+        result = await session.execute(
+            select(KnowledgeSource).options(
+                selectinload(KnowledgeSource.documents).selectinload(Document.chunks)
+            )
+        )
+        sources = [
+            source
+            for source in result.scalars()
+            if source.source_metadata.get("corpus_id") == CORPUS_ID and source.status == "active"
+        ]
+        documents = sum(len(source.documents) for source in sources)
+        chunks = sum(len(document.chunks) for source in sources for document in source.documents)
+        return len(sources), documents, chunks
 
 
 def main() -> int:
-    sources, documents, chunks = asyncio.run(_counts())
-    print(f"demo_sources={sources}")
-    print(f"demo_documents={documents}")
-    print(f"demo_chunks={chunks}")
-    if sources < 2 or documents < 2 or chunks < 2:
-        print("Demo data verification failed: expected at least 2 sources/documents/chunks.")
+    sources, documents, chunks = asyncio.run(_northstar_counts())
+    print(f"northstar_demo_sources={sources}")
+    print(f"northstar_demo_documents={documents}")
+    print(f"northstar_demo_chunks={chunks}")
+    if (
+        sources != EXPECTED_DOCUMENTS
+        or documents != EXPECTED_DOCUMENTS
+        or chunks < EXPECTED_DOCUMENTS
+    ):
+        print(
+            "Northstar demo verification failed: expected 10 active sources, "
+            "10 document versions, and at least one chunk per document."
+        )
         return 1
-    print("Demo data verification passed.")
+    print("Northstar demo data verification passed.")
     return 0
 
 

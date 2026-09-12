@@ -4,24 +4,24 @@ import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 
 export const metadata: Metadata = {
-  title: "GroundStack | Source-backed technical answers",
+  title: "GroundStack | Private support knowledge assistant",
   description:
-    "Ask questions against approved technical documentation and inspect the sources supporting every answer.",
+    "A portfolio demo of a private technical-support assistant that answers from approved documentation with inspectable citations.",
   openGraph: {
-    title: "GroundStack | Source-backed technical answers",
+    title: "GroundStack | Private support knowledge assistant",
     description:
-      "Ask questions against approved technical documentation and inspect the sources supporting every answer.",
+      "A portfolio demo of a private technical-support assistant that answers from approved documentation with inspectable citations.",
     type: "website",
   },
 };
 
 const steps = [
   [
-    "Add documentation",
-    "Upload approved technical files or allowed docs URLs.",
+    "Seed or upload approved docs",
+    "The demo uses fictional Northstar Systems support documentation.",
   ],
-  ["Ask a question", "Use plain language to ask about the knowledge base."],
-  ["Review sources", "Inspect the document excerpts behind each answer."],
+  ["Ask a support question", "Employees ask about VPN, access, incidents, deployments, and API issues."],
+  ["Review source evidence", "Every supported answer links back to the document excerpts that justify it."],
 ] as const;
 
 export default function Home() {
@@ -39,11 +39,16 @@ export default function Home() {
       <main className="public-main">
         <section className="public-hero" aria-labelledby="hero-title">
           <h1 id="hero-title">
-            Ask technical questions. Get answers backed by your documentation.
+            A private technical-support assistant for approved documentation.
           </h1>
           <p>
-            GroundStack searches approved technical documents and returns
-            answers with sources you can inspect.
+            GroundStack demonstrates how employees can ask operational support
+            questions and get answers grounded in a controlled knowledge base,
+            with citations that reviewers can inspect.
+          </p>
+          <p className="demo-disclaimer">
+            Demo workspace: Northstar Systems is fictional and uses original
+            synthetic documentation. No customer usage is claimed.
           </p>
           <div className="public-actions">
             <Link className="button button-primary no-underline" href="/ask">
@@ -77,9 +82,9 @@ export default function Home() {
         >
           <h2 id="sources-title">Source-backed answers</h2>
           <p>
-            GroundStack keeps the answer and its supporting document excerpts
-            together, so a reviewer can check whether the response is supported
-            by the available material.
+            GroundStack separates generated answers from source evidence. If
+            the Northstar demo corpus does not cover a question, the assistant
+            should say it lacks enough evidence instead of inventing a policy.
           </p>
         </section>
       </main>

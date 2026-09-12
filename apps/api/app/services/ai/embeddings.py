@@ -1,3 +1,5 @@
+from functools import lru_cache
+from threading import Lock
 from typing import Literal
 
 from app.core.settings import get_settings
@@ -36,16 +38,20 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         self.batch_size = batch_size or settings.embedding_batch_size
         self.device = detect_device(device or settings.embedding_device)
         self._model = None
+        self._model_lock = Lock()
 
     @property
     def active_model(self) -> str:
         return self.model_name
 
     def _load_model(self):
-        if self._model is None:
-            from sentence_transformers import SentenceTransformer
+        if self._model is not None:
+            return self._model
+        with self._model_lock:
+            if self._model is None:
+                from sentence_transformers import SentenceTransformer
 
-            self._model = SentenceTransformer(self.model_name, device=self.device)
+                self._model = SentenceTransformer(self.model_name, device=self.device)
         return self._model
 
     async def embed(self, request: EmbeddingRequest) -> list[EmbeddingResult]:
@@ -101,5 +107,6 @@ class SentenceTransformerEmbeddingProvider(EmbeddingProvider):
         return results
 
 
+@lru_cache(maxsize=1)
 def get_embedding_provider() -> SentenceTransformerEmbeddingProvider:
     return SentenceTransformerEmbeddingProvider()

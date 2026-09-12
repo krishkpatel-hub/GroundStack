@@ -39,7 +39,7 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
       json: [
         {
           id: conversationId,
-          title: "Demo: pgvector setup",
+          title: "Demo: DB-104 support",
           archived: false,
           created_at: "2026-08-19T12:00:00Z",
           updated_at: "2026-08-19T12:10:00Z",
@@ -58,7 +58,7 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
             conversation_id: conversationId,
             role: "user",
             status: "completed",
-            content: "How do I configure pgvector for GroundStack?",
+            content: "What does DB-104 mean?",
             grounding_status: null,
             retrieval_run_id: null,
             generation_run_id: null,
@@ -83,7 +83,7 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
   await page.route("**/api/v1/documents?**", (route) =>
     route.fulfill({
       json: {
-        total: 1,
+        total: 10,
         limit: 20,
         offset: 0,
         items: [
@@ -91,10 +91,10 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
             id: documentId,
             source_id: "44444444-4444-4444-4444-444444444444",
             source_type: "file",
-            display_name: "setup.md",
-            source_status: "ready",
+            display_name: "04-db-104.md",
+            source_status: "active",
             version: 1,
-            title: "GroundStack setup",
+            title: "Northstar Systems Database Error DB-104",
             mime_type: "text/markdown",
             content_checksum: "demo-checksum",
             chunk_count: 2,
@@ -115,8 +115,9 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
             id: "55555555-5555-5555-5555-555555555555",
             document_id: documentId,
             position: 1,
-            heading_path: ["Setup"],
-            content: "Run migrations after starting PostgreSQL with pgvector.",
+            heading_path: ["Meaning"],
+            content:
+              "DB-104 means the application connected to the database host but failed the schema readiness check.",
             token_count: 12,
             chunk_checksum: "chunk",
             embedding_model: "demo",
@@ -132,19 +133,28 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
       body: "",
     }),
   );
-  await page.route("**/api/v1/chat/stream", (route) =>
-    route.fulfill({
+  await page.route("**/api/v1/chat/stream", async (route) => {
+    const body = route.request().postDataJSON() as { question?: string };
+    const unsupported = body.question?.includes("parental-leave");
+    return route.fulfill({
       headers: { "content-type": "text/event-stream" },
-      body: [
-        `event: conversation\ndata: {"conversation_id":"${conversationId}"}\n\n`,
-        `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"GroundStack setup","source_display_name":"setup.md","source_type":"file","source_uri":null,"section_path":"Setup","page_number":null,"excerpt":"Run migrations after starting PostgreSQL with pgvector.","final_rank":1}]}\n\n`,
-        `event: generation_started\ndata: {}\n\n`,
-        `event: token\ndata: {"token":"Run migrations after starting PostgreSQL with pgvector. [S1]"}\n\n`,
-        `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"Run migrations after starting PostgreSQL with pgvector. [S1]","grounding_status":"grounded"}\n\n`,
-        `event: completed\ndata: {}\n\n`,
-      ].join(""),
-    }),
-  );
+      body: unsupported
+        ? [
+            `event: conversation\ndata: {"conversation_id":"${conversationId}"}\n\n`,
+            `event: retrieval_completed\ndata: {"citations":[]}\n\n`,
+            `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"I do not have enough retrieved evidence to answer this question. Add or select relevant documentation in the Knowledge Base, then search again.","grounding_status":"insufficient_evidence"}\n\n`,
+            `event: completed\ndata: {}\n\n`,
+          ].join("")
+        : [
+            `event: conversation\ndata: {"conversation_id":"${conversationId}"}\n\n`,
+            `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"Northstar Systems Database Error DB-104","source_display_name":"04-db-104.md","source_type":"file","source_uri":null,"section_path":"Meaning","page_number":null,"excerpt":"DB-104 means the application connected to the database host but failed the schema readiness check.","final_rank":1}]}\n\n`,
+            `event: generation_started\ndata: {}\n\n`,
+            `event: token\ndata: {"token":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]"}\n\n`,
+            `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]","grounding_status":"grounded"}\n\n`,
+            `event: completed\ndata: {}\n\n`,
+          ].join(""),
+    });
+  });
   await page.route(`**/api/v1/messages/${messageId}/feedback`, (route) =>
     route.fulfill({
       json: {
@@ -163,29 +173,58 @@ test("landing page opens the workspace and completes a cited answer", async ({
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: "Ask technical questions. Get answers backed by your documentation.",
+      name: "A private technical-support assistant for approved documentation.",
     }),
   ).toBeVisible();
+  await expect(page.getByText("Northstar Systems is fictional")).toBeVisible();
   await page
     .getByRole("main")
     .getByRole("link", { name: "Open workspace" })
     .click();
   await expect(page.getByRole("heading", { name: "Workspace" })).toBeVisible();
+  await expect(
+    page.getByText("Fictional demo workspace", { exact: true }),
+  ).toBeVisible();
   await page
-    .getByLabel("Question")
-    .fill("How do I configure pgvector for GroundStack?");
+    .getByRole("button", {
+      name: "What does DB-104 mean, and how should I resolve it?",
+    })
+    .click();
+  await page
+    .getByRole("textbox", { name: "Question" })
+    .fill("What does DB-104 mean, and how should I resolve it?");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(
-    page.getByText("Run migrations after starting PostgreSQL"),
+    page.getByText("schema readiness check"),
   ).toBeVisible();
   await page.getByRole("button", { name: "[S1]" }).click();
   await expect(
-    page.getByRole("dialog", { name: "GroundStack setup" }),
+    page.getByRole("dialog", { name: "Source evidence" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Northstar Systems Database Error DB-104"),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
   await page.getByRole("button", { name: "Helpful" }).click();
   await expect(page.getByText("Saved")).toBeVisible();
+});
+
+test("northstar unsupported question returns insufficient evidence", async ({
+  page,
+}) => {
+  await mockApi(page, "admin");
+  await page.goto("/ask");
+  await page
+    .getByRole("button", {
+      name: "What is Northstar Systems' parental-leave policy?",
+    })
+    .click();
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(
+    page.getByText("I do not have enough retrieved evidence"),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "[S1]" })).toHaveCount(0);
 });
 
 test("admin core routes expose source and document-management states", async ({
@@ -203,6 +242,7 @@ test("admin core routes expose source and document-management states", async ({
   await expect(
     page.getByRole("heading", { name: "Knowledge base" }),
   ).toBeVisible();
+  await expect(page.getByText("Northstar Systems support corpus")).toBeVisible();
   await expect(page.getByText("Maximum file size: 10 MB")).toBeVisible();
   await page.getByRole("button", { name: "Delete" }).click();
   await expect(

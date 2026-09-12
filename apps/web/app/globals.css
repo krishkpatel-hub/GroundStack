@@ -202,6 +202,12 @@ select:focus-visible {
   line-height: 1.65;
 }
 
+.public-hero .demo-disclaimer {
+  color: var(--graphite);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
 .public-actions {
   margin-top: 28px;
 }
@@ -717,6 +723,60 @@ select:focus-visible {
   padding: 18px;
 }
 
+.demo-workspace-note {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  padding: 16px;
+}
+
+.demo-workspace-note h2 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.demo-workspace-note p:not(.eyebrow) {
+  max-width: 760px;
+  margin-top: 4px;
+  color: var(--graphite);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.suggestion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.suggestion-button {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 10px 12px;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.suggestion-button:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.suggestion-button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .empty-chat {
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-md);
@@ -1085,6 +1145,10 @@ select:focus-visible {
 
   .chat-surface {
     min-height: calc(100vh - 230px);
+  }
+
+  .demo-workspace-note {
+    flex-direction: column;
   }
 
   .desktop-inventory {

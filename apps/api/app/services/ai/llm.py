@@ -1,6 +1,5 @@
 import asyncio
 import json
-import math
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -362,9 +361,8 @@ class FakeLLMProvider(LLMProvider):
         if self.first_token_delay_ms:
             await asyncio.sleep(self.first_token_delay_ms / 1000)
         token_delay = 1 / self.token_rate_per_second
-        phrase = "GroundStack fake benchmark response grounded in source [S1]. "
-        repeated = math.ceil(self.total_tokens / max(1, len(phrase.split())))
-        tokens = (" ".join([phrase] * repeated)).split()[: self.total_tokens]
+        phrase = self._demo_response(request)
+        tokens = phrase.split()[: self.total_tokens]
         for index, token in enumerate(tokens):
             if self.failure_mode == "stream_interruption" and index >= max(1, len(tokens) // 2):
                 yield GenerationEvent(
@@ -382,6 +380,42 @@ class FakeLLMProvider(LLMProvider):
             content=" ".join(tokens),
             finish_reason="stop",
         )
+
+    def _demo_response(self, request: GenerationRequest) -> str:
+        prompt = "\n".join(message.content for message in request.messages).lower()
+        if "db-104" in prompt:
+            return (
+                "DB-104 means the service reached the database but the schema readiness "
+                "check failed. Verify migration status, apply the pending migration with "
+                "the linked change ticket, restart the affected service, and confirm "
+                "schema_ready=true before closing the incident. [S1] "
+            )
+        if "vpn" in prompt:
+            return (
+                "Configure the company VPN by installing Northstar SecureConnect, using "
+                "the northstar-employee profile, signing in with SSO, approving MFA, and "
+                "testing access to the internal status portal. If it fails, refresh the "
+                "profile and confirm the device is enrolled. [S1] "
+            )
+        if "rollback" in prompt:
+            return (
+                "Before rolling back, capture the incident ID, confirm the last healthy "
+                "release, check migration safety, notify the incident channel, and run "
+                "the rollback from the approved deployment pipeline. [S1] "
+            )
+        if "severity one" in prompt or "severity 1" in prompt:
+            return (
+                "Classify an incident as severity one when a critical production service "
+                "is unavailable, customer-impacting data integrity is at risk, or a "
+                "security-sensitive outage requires immediate executive visibility. [S1] "
+            )
+        if "analytics database" in prompt or "request access" in prompt:
+            return (
+                "Request analytics database access through the Access Portal using the "
+                "ANA-DB-READ role, include the business reason and manager approval, and "
+                "wait for data-owner review before using the credentials. [S1] "
+            )
+        return "GroundStack demo response grounded in the retrieved source evidence. [S1] "
 
 
 def get_llm_provider() -> LLMProvider:

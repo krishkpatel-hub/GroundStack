@@ -111,10 +111,17 @@ class OllamaProvider(LLMProvider):
         )
 
     async def stream(self, request: GenerationRequest) -> AsyncIterator[GenerationEvent]:
-        if not await self.model_available():
-            error_message = (
-                f"Ollama model '{self.model}' is not installed. Run: ollama pull {self.model}"
+        try:
+            model_available = await self.model_available()
+        except LLMProviderError as exc:
+            yield GenerationEvent(
+                type="error",
+                error_category=exc.category,
+                error_message="The language model provider is unavailable.",
             )
+            return
+        if not model_available:
+            error_message = "The configured language model is unavailable."
             yield GenerationEvent(
                 type="error",
                 error_category="model_missing",
@@ -153,9 +160,11 @@ class OllamaProvider(LLMProvider):
             yield GenerationEvent(
                 type="error", error_category="provider_timeout", error_message="LLM timed out."
             )
-        except Exception as exc:
+        except Exception:
             yield GenerationEvent(
-                type="error", error_category="provider_error", error_message=str(exc)
+                type="error",
+                error_category="provider_error",
+                error_message="The language model provider returned an error.",
             )
 
 
@@ -249,11 +258,20 @@ class OpenAICompatibleProvider(LLMProvider):
         )
 
     async def stream(self, request: GenerationRequest) -> AsyncIterator[GenerationEvent]:
-        if not await self.model_available():
+        try:
+            model_available = await self.model_available()
+        except LLMProviderError as exc:
+            yield GenerationEvent(
+                type="error",
+                error_category=exc.category,
+                error_message="The language model provider is unavailable.",
+            )
+            return
+        if not model_available:
             yield GenerationEvent(
                 type="error",
                 error_category="model_missing",
-                error_message=f"Model '{self.model}' is unavailable.",
+                error_message="The configured language model is unavailable.",
             )
             return
         yield GenerationEvent(type="start")
@@ -294,9 +312,11 @@ class OpenAICompatibleProvider(LLMProvider):
             yield GenerationEvent(
                 type="error", error_category="provider_timeout", error_message="LLM timed out."
             )
-        except Exception as exc:
+        except Exception:
             yield GenerationEvent(
-                type="error", error_category="provider_error", error_message=str(exc)
+                type="error",
+                error_category="provider_error",
+                error_message="The language model provider returned an error.",
             )
 
 

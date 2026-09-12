@@ -72,6 +72,7 @@ describe("knowledge API utilities", () => {
 
   it("maps internal document source status to user-facing labels", () => {
     expect(documentStatusLabel("active")).toBe("Ready");
+    expect(documentStatusLabel("skipped")).toBe("Already imported");
     expect(documentStatusLabel("queued")).toBe("Processing");
     expect(documentStatusLabel("failed")).toBe("Failed");
   });

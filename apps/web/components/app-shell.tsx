@@ -81,6 +81,8 @@ const demoQuestions = [
 ] as const;
 
 const activeConversationStorageKey = "groundstack.activeConversationId";
+const generationFailureMessage =
+  "GroundStack could not generate an answer. Retry after the provider recovers.";
 
 function newLocalId(prefix: string) {
   return `${prefix}-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
@@ -434,18 +436,18 @@ export function AppShell({
       }
       const message =
         chatError instanceof Error
-          ? chatError.message
+          ? generationFailureMessage
           : "Answer generation failed";
       setError(message);
       setStage("Failed");
-      setAnnounce(
-        "Generation failed. Your question and partial output were preserved.",
-      );
+      setAnnounce("Generation failed. No answer was saved for this attempt.");
       setMessages((current) =>
         updateAssistant(current, assistantLocalId, {
           content: message,
           status: "failed",
           groundingStatus: "generation_failed",
+          citations: [],
+          citationIds: [],
         }),
       );
     } finally {
@@ -826,7 +828,11 @@ const MessageBubble = memo(function MessageBubble({
   return (
     <article className={`message message-${message.role}`}>
       <div className="message-label">
-        {message.role === "user" ? "You" : "GroundStack answer"}
+        {message.role === "user"
+          ? "You"
+          : message.status === "failed"
+            ? "Generation failed"
+            : "GroundStack answer"}
         {message.status === "streaming" && (
           <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
         )}

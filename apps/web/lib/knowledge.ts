@@ -69,6 +69,7 @@ export const ACCEPTED_FILE_TYPES = [
 
 export function documentStatusLabel(status: string) {
   if (status === "failed" || status === "deleted") return "Failed";
+  if (status === "skipped") return "Already imported";
   if (status === "processing" || status === "queued") return "Processing";
   return "Ready";
 }

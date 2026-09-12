@@ -214,6 +214,7 @@ export function KnowledgeBase({
           ? "Track ingestion jobs, recovery states, and document processing progress."
           : "Northstar Systems fictional demo workspace for approved technical-support documentation."
       }
+      requireAdmin
       actions={
         <button
           className="button"

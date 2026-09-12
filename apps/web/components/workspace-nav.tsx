@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { fetchAuthInfo } from "@/lib/auth";
 import { fetchDocuments } from "@/lib/knowledge";
 
 type KnowledgeState =
@@ -19,7 +20,16 @@ type KnowledgeState =
 
 export function WorkspaceNav() {
   const pathname = usePathname();
+  const [canManageDocuments, setCanManageDocuments] = useState(false);
   const active = pathname.startsWith("/knowledge") ? "documents" : "ask";
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchAuthInfo(controller.signal)
+      .then((auth) => setCanManageDocuments(auth.admin))
+      .catch(() => setCanManageDocuments(false));
+    return () => controller.abort();
+  }, []);
 
   return (
     <div className="workspace-toolbar" aria-label="Workspace navigation">
@@ -50,12 +60,14 @@ export function WorkspaceNav() {
           label="Ask"
           icon="ask"
         />
-        <WorkspaceTab
-          href="/knowledge"
-          active={active === "documents"}
-          label="Documents"
-          icon="documents"
-        />
+        {canManageDocuments && (
+          <WorkspaceTab
+            href="/knowledge"
+            active={active === "documents"}
+            label="Documents"
+            icon="documents"
+          />
+        )}
       </div>
       <KnowledgeBaseStatus />
     </div>

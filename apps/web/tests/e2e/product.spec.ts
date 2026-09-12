@@ -8,7 +8,7 @@ const documentId = "33333333-3333-3333-3333-333333333333";
 async function mockApi(
   page: Page,
   role: "anonymous" | "admin" = "admin",
-  options: { onChatStream?: () => void } = {},
+  options: { onChatStream?: () => void; failGeneration?: boolean } = {},
 ) {
   await page.route("**/api/v1/auth/me", (route) =>
     route.fulfill({
@@ -141,23 +141,31 @@ async function mockApi(
     options.onChatStream?.();
     const body = route.request().postDataJSON() as { question?: string };
     const unsupported = body.question?.includes("parental-leave");
+    const citationEvent = `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"Northstar Systems Database Error DB-104","source_display_name":"04-db-104.md","source_type":"file","source_uri":null,"section_path":"Meaning","page_number":null,"excerpt":"DB-104 means the application connected to the database host but failed the schema readiness check.","final_rank":1}]}\n\n`;
     return route.fulfill({
       headers: { "content-type": "text/event-stream" },
-      body: unsupported
-        ? [
-            `event: conversation\ndata: {"conversation_id":"${conversationId}"}\n\n`,
-            `event: retrieval_completed\ndata: {"citations":[]}\n\n`,
-            `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"I do not have enough retrieved evidence to answer this question. Add or select relevant documentation in the Knowledge Base, then search again.","grounding_status":"insufficient_evidence"}\n\n`,
-            `event: completed\ndata: {}\n\n`,
-          ].join("")
-        : [
-            `event: conversation\ndata: {"conversation_id":"${conversationId}"}\n\n`,
-            `event: retrieval_completed\ndata: {"citations":[{"citation_id":"S1","source_id":"44444444-4444-4444-4444-444444444444","document_id":"${documentId}","document_version":1,"chunk_id":"55555555-5555-5555-5555-555555555555","title":"Northstar Systems Database Error DB-104","source_display_name":"04-db-104.md","source_type":"file","source_uri":null,"section_path":"Meaning","page_number":null,"excerpt":"DB-104 means the application connected to the database host but failed the schema readiness check.","final_rank":1}]}\n\n`,
-            `event: generation_started\ndata: {}\n\n`,
-            `event: token\ndata: {"token":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]"}\n\n`,
-            `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]","grounding_status":"grounded"}\n\n`,
-            `event: completed\ndata: {}\n\n`,
-          ].join(""),
+      body: [
+        `event: conversation\ndata: {"conversation_id":"${conversationId}"}\n\n`,
+        unsupported
+          ? `event: retrieval_completed\ndata: {"citations":[]}\n\n`
+          : citationEvent,
+        ...(unsupported
+          ? [
+              `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"I do not have enough retrieved evidence to answer this question. Add or select relevant documentation in the Knowledge Base, then search again.","grounding_status":"insufficient_evidence"}\n\n`,
+              `event: completed\ndata: {}\n\n`,
+            ]
+          : options.failGeneration
+            ? [
+                `event: generation_started\ndata: {}\n\n`,
+                `event: error\ndata: {"message":"fake http_500","grounding_status":"generation_failed"}\n\n`,
+              ]
+            : [
+                `event: generation_started\ndata: {}\n\n`,
+                `event: token\ndata: {"token":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]"}\n\n`,
+                `event: canonical_answer\ndata: {"message_id":"${messageId}","answer":"DB-104 means the application reached the database but failed the schema readiness check. Run migration status, apply pending migrations with the change ticket, restart the service, and confirm schema_ready=true. [S1]","grounding_status":"grounded"}\n\n`,
+                `event: completed\ndata: {}\n\n`,
+              ]),
+      ].join(""),
     });
   });
   await page.route(`**/api/v1/messages/${messageId}/feedback`, (route) =>
@@ -236,6 +244,32 @@ test("chat submission is guarded against rapid duplicate sends", async ({
   expect(chatRequests).toBe(1);
 });
 
+test("provider failure does not render raw errors as cited answers", async ({
+  page,
+}) => {
+  await mockApi(page, "admin", { failGeneration: true });
+  await page.goto("/ask");
+  await page
+    .getByLabel("Example questions")
+    .getByRole("button", {
+      name: "What does DB-104 mean, and how should I resolve it?",
+    })
+    .click();
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(
+    page
+      .getByText(
+        "GroundStack could not generate an answer. Retry after the provider recovers.",
+      )
+      .first(),
+  ).toBeVisible();
+  await expect(page.getByText("fake http_500")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "[S1]" })).toHaveCount(0);
+  await expect(
+    page.getByText("Generation failed", { exact: true }),
+  ).toBeVisible();
+});
+
 test("northstar unsupported question returns insufficient evidence", async ({
   page,
 }) => {
@@ -308,6 +342,13 @@ test("anonymous navigation hides admin destinations", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("link", { name: "Evaluation" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Training" })).toHaveCount(0);
+  await page.goto("/ask");
+  await expect(
+    page.getByLabel("Workspace views").getByRole("tab", { name: "Documents" }),
+  ).toHaveCount(0);
+  await page.goto("/knowledge");
+  await expect(page.getByText("Admin access required")).toBeVisible();
+  await expect(page.locator('input[type="file"]')).toHaveCount(0);
 });
 
 test("empty database states stay useful", async ({ page }) => {

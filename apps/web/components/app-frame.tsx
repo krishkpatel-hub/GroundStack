@@ -24,6 +24,7 @@ type AppFrameProps = {
   description: string;
   actions?: ReactNode;
   children: ReactNode;
+  requireAdmin?: boolean;
 };
 
 const publicItems = [
@@ -44,6 +45,7 @@ export function AppFrame({
   description,
   actions,
   children,
+  requireAdmin = false,
 }: AppFrameProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -54,11 +56,15 @@ export function AppFrame({
     roles: [],
     admin: false,
   });
+  const [authLoaded, setAuthLoaded] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
     void fetchAuthInfo(controller.signal)
-      .then(setAuth)
+      .then((nextAuth) => {
+        setAuth(nextAuth);
+        setAuthLoaded(true);
+      })
       .catch(() => {
         setAuth({
           authenticated: false,
@@ -66,6 +72,7 @@ export function AppFrame({
           roles: [],
           admin: false,
         });
+        setAuthLoaded(true);
       });
     return () => controller.abort();
   }, []);
@@ -192,13 +199,39 @@ export function AppFrame({
                 <p className="page-description mt-1">{description}</p>
               </div>
             </div>
-            {actions && (
+            {actions && (!requireAdmin || auth.admin) && (
               <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>
             )}
           </div>
         </header>
         <main id="main-content" className="workspace-inner" tabIndex={-1}>
-          {children}
+          {requireAdmin && !authLoaded ? (
+            <div className="empty-chat">
+              <h2 className="text-xl font-semibold">Checking access</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
+                GroundStack is verifying whether this session can manage
+                documents.
+              </p>
+            </div>
+          ) : requireAdmin && !auth.admin ? (
+            <div className="empty-chat" role="alert">
+              <h2 className="text-xl font-semibold">Admin access required</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--graphite)]">
+                Document management is available only to administrators. You can
+                still ask questions from approved demo documentation.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  className="button button-primary no-underline"
+                  href="/ask"
+                >
+                  Return to Ask
+                </Link>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </main>
       </div>
     </div>

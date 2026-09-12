@@ -324,6 +324,7 @@ export function AppShell({
     window.localStorage.removeItem(activeConversationStorageKey);
     setMessages([]);
     setQuestion("");
+    setLastQuestion("");
     setError(null);
     setStage("Idle");
     setAnnounce("New conversation ready");

@@ -277,6 +277,11 @@ test("landing page opens the workspace and completes a cited answer", async ({
   await expect(page.getByRole("dialog")).toBeHidden();
   await page.getByRole("button", { name: "Helpful" }).click();
   await expect(page.getByText("Saved")).toBeVisible();
+  await page.getByRole("button", { name: "New chat" }).click();
+  await expect(page.getByRole("button", { name: "Retry" })).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Ask your knowledge base" }),
+  ).toBeVisible();
 });
 
 test("saved feedback is restored with conversation history", async ({

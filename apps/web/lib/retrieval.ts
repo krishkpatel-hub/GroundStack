@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { apiRequest } from "@/lib/api";
 
 export type RetrievalFilters = {
   source_types?: string[];
@@ -49,21 +48,14 @@ export async function searchRetrieval(
   },
   signal?: AbortSignal,
 ): Promise<RetrievalSearchResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/retrieval/search`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-    signal,
-  });
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as {
-      error?: { message?: string };
-      detail?: unknown;
-    } | null;
-    throw new Error(
-      body?.error?.message ?? `Retrieval failed with ${response.status}`,
-    );
-  }
-  return response.json() as Promise<RetrievalSearchResponse>;
+  return apiRequest(
+    "/api/v1/retrieval/search",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal,
+    },
+    "Retrieval failed",
+  );
 }

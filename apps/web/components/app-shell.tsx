@@ -31,6 +31,7 @@ import remarkGfm from "remark-gfm";
 import { ApiConnectionAlert } from "@/components/api-connection-alert";
 import { AppFrame } from "@/components/app-frame";
 import { WorkspaceNav } from "@/components/workspace-nav";
+import { friendlyApiError } from "@/lib/api";
 import {
   fetchConversationMessages,
   fetchConversations,
@@ -39,11 +40,7 @@ import {
   updateConversation,
   type Conversation,
 } from "@/lib/chat";
-import {
-  fetchDocuments,
-  friendlyApiError,
-  type DocumentItem,
-} from "@/lib/knowledge";
+import { fetchDocuments, type DocumentItem } from "@/lib/knowledge";
 import {
   feedbackCategories,
   saveFeedback,
@@ -117,6 +114,7 @@ export function AppShell({
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const citationButtonRef = useRef<HTMLButtonElement | null>(null);
   const restoredConversationRef = useRef(false);
+  const submitInFlightRef = useRef(false);
 
   const loading =
     stage === "Retrieving evidence" || stage === "Generating answer";
@@ -274,7 +272,8 @@ export function AppShell({
       );
     } catch (loadError) {
       setError(
-        friendlyApiError(loadError, "Could not load this conversation.").message,
+        friendlyApiError(loadError, "Could not load this conversation.")
+          .message,
       );
       setAnnounce("Conversation could not be loaded");
     }
@@ -325,7 +324,9 @@ export function AppShell({
   ) {
     event?.preventDefault();
     const trimmed = (retry ?? question).trim();
-    if (!trimmed || loading || !hasDocuments) return;
+    if (!trimmed || loading || submitInFlightRef.current || !hasDocuments)
+      return;
+    submitInFlightRef.current = true;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -448,6 +449,7 @@ export function AppShell({
         }),
       );
     } finally {
+      submitInFlightRef.current = false;
       if (abortRef.current === controller) abortRef.current = null;
     }
   }

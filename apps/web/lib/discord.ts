@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { apiRequest } from "@/lib/api";
 
 export type DiscordGuildConfig = {
   id: string;
@@ -39,15 +38,11 @@ export type DiscordEscalation = {
 export async function fetchDiscordGuildConfig(
   guildId: string,
 ): Promise<DiscordGuildConfig> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/discord/guilds/${guildId}`,
-    {
-      cache: "no-store",
-    },
+  return apiRequest(
+    `/api/v1/discord/guilds/${guildId}`,
+    undefined,
+    "Discord guild config failed",
   );
-  if (!response.ok)
-    throw new Error(`Discord guild config failed with ${response.status}`);
-  return response.json() as Promise<DiscordGuildConfig>;
 }
 
 export async function updateDiscordGuildConfig(
@@ -69,18 +64,15 @@ export async function updateDiscordGuildConfig(
     >
   >,
 ): Promise<DiscordGuildConfig> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/discord/guilds/${guildId}`,
+  return apiRequest(
+    `/api/v1/discord/guilds/${guildId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      cache: "no-store",
     },
+    "Discord guild update failed",
   );
-  if (!response.ok)
-    throw new Error(`Discord guild update failed with ${response.status}`);
-  return response.json() as Promise<DiscordGuildConfig>;
 }
 
 export async function fetchDiscordEscalations(
@@ -88,13 +80,11 @@ export async function fetchDiscordEscalations(
 ): Promise<DiscordEscalation[]> {
   const params = new URLSearchParams();
   if (status) params.set("status", status);
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/discord/escalations?${params.toString()}`,
-    { cache: "no-store" },
+  return apiRequest(
+    `/api/v1/discord/escalations?${params.toString()}`,
+    undefined,
+    "Discord escalations failed",
   );
-  if (!response.ok)
-    throw new Error(`Discord escalations failed with ${response.status}`);
-  return response.json() as Promise<DiscordEscalation[]>;
 }
 
 export async function updateDiscordEscalation(
@@ -106,16 +96,13 @@ export async function updateDiscordEscalation(
     >
   >,
 ): Promise<DiscordEscalation> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/discord/escalations/${escalationId}`,
+  return apiRequest(
+    `/api/v1/discord/escalations/${escalationId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      cache: "no-store",
     },
+    "Discord escalation update failed",
   );
-  if (!response.ok)
-    throw new Error(`Discord escalation update failed with ${response.status}`);
-  return response.json() as Promise<DiscordEscalation>;
 }

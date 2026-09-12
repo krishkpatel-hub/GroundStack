@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { apiRequest } from "@/lib/api";
 
 export type AuthInfo = {
   authenticated: boolean;
@@ -10,12 +9,9 @@ export type AuthInfo = {
 };
 
 export async function fetchAuthInfo(signal?: AbortSignal): Promise<AuthInfo> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-    cache: "no-store",
-    signal,
-  });
-  if (!response.ok) {
+  try {
+    return await apiRequest("/api/v1/auth/me", { signal }, "Auth check failed");
+  } catch {
     return { authenticated: false, anonymous: true, roles: [], admin: false };
   }
-  return response.json() as Promise<AuthInfo>;
 }

@@ -12,16 +12,18 @@ import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { ApiConnectionAlert } from "@/components/api-connection-alert";
 import { AppFrame } from "@/components/app-frame";
 import { WorkspaceNav } from "@/components/workspace-nav";
+import { friendlyApiError } from "@/lib/api";
 import {
   ACCEPTED_FILE_TYPES,
-  MAX_UPLOAD_SIZE_BYTES,
   deleteDocument,
+  documentStatusClass,
+  documentStatusLabel,
   fetchDocumentChunks,
   fetchDocuments,
   fetchIngestionJob,
-  friendlyApiError,
   submitKnowledgeUrl,
   uploadKnowledgeFile,
+  validateKnowledgeFile,
   type DocumentChunk,
   type DocumentItem,
   type IngestionJob,
@@ -50,19 +52,6 @@ function createOptimisticJob(job: {
   };
 }
 
-function statusClass(status: string) {
-  if (status === "failed") return "status-label status-danger";
-  if (status === "processing" || status === "queued")
-    return "status-label status-warning";
-  return "status-label status-success";
-}
-
-function statusLabel(status: string) {
-  if (status === "failed" || status === "deleted") return "Failed";
-  if (status === "processing" || status === "queued") return "Processing";
-  return "Ready";
-}
-
 export function KnowledgeBase({
   mode = "admin",
 }: {
@@ -79,13 +68,15 @@ export function KnowledgeBase({
   const [dragActive, setDragActive] = useState(false);
   const [selectedFileNames, setSelectedFileNames] = useState<string[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<DocumentItem | null>(null);
+  const [fileSubmitting, setFileSubmitting] = useState(false);
+  const [urlSubmitting, setUrlSubmitting] = useState(false);
 
   const loadDocuments = useCallback(
     async (nextOffset = offset) => {
       setLoadingDocs(true);
+      setError(null);
       try {
         setDocuments(await fetchDocuments(pageSize, nextOffset));
-        setError(null);
       } catch (loadError) {
         setError(
           friendlyApiError(loadError, "Could not load documents").message,
@@ -106,30 +97,40 @@ export function KnowledgeBase({
     if (!jobs.some((job) => ["queued", "processing"].includes(job.status)))
       return;
     const interval = window.setInterval(async () => {
-      const refreshed = await Promise.all(
-        jobs.map((job) => fetchIngestionJob(job.id)),
-      );
-      setJobs(refreshed);
-      if (
-        refreshed.some((job) => ["completed", "skipped"].includes(job.status))
-      ) {
-        void loadDocuments(0);
+      try {
+        const refreshed = await Promise.all(
+          jobs.map((job) => fetchIngestionJob(job.id)),
+        );
+        setJobs(refreshed);
+        if (
+          refreshed.some((job) => ["completed", "skipped"].includes(job.status))
+        ) {
+          void loadDocuments(0);
+        }
+      } catch (pollError) {
+        setError(
+          friendlyApiError(pollError, "Could not refresh processing status")
+            .message,
+        );
       }
     }, 1600);
     return () => window.clearInterval(interval);
   }, [jobs, loadDocuments]);
 
   async function acceptFiles(files: FileList | File[]) {
+    if (fileSubmitting) return;
     setError(null);
     const fileList = Array.from(files);
+    if (fileList.length === 0) return;
     setSelectedFileNames(fileList.map((file) => file.name));
-    const oversized = fileList.find(
-      (file) => file.size > MAX_UPLOAD_SIZE_BYTES,
-    );
-    if (oversized) {
-      setError(`${oversized.name} is larger than the 10 MB upload limit.`);
+    const validationError = fileList
+      .map(validateKnowledgeFile)
+      .find((message): message is string => Boolean(message));
+    if (validationError) {
+      setError(validationError);
       return;
     }
+    setFileSubmitting(true);
     try {
       const accepted = await Promise.all(
         fileList.map((file) => uploadKnowledgeFile(file)),
@@ -137,18 +138,23 @@ export function KnowledgeBase({
       setJobs((current) => [...accepted.map(createOptimisticJob), ...current]);
     } catch (uploadError) {
       setError(friendlyApiError(uploadError, "Upload failed").message);
+    } finally {
+      setFileSubmitting(false);
     }
   }
 
   async function submitUrl() {
-    if (!url.trim()) return;
+    if (!url.trim() || urlSubmitting) return;
     setError(null);
+    setUrlSubmitting(true);
     try {
       const job = await submitKnowledgeUrl(url.trim());
       setJobs((current) => [createOptimisticJob(job), ...current]);
       setUrl("");
     } catch (urlError) {
       setError(friendlyApiError(urlError, "URL ingestion failed").message);
+    } finally {
+      setUrlSubmitting(false);
     }
   }
 
@@ -180,8 +186,15 @@ export function KnowledgeBase({
         ...current,
         [next]: { total: 0, limit: 10, offset: 0, items: [] },
       }));
-      const page = await fetchDocumentChunks(next, 10, 0);
-      setChunks((current) => ({ ...current, [next]: page }));
+      try {
+        const page = await fetchDocumentChunks(next, 10, 0);
+        setChunks((current) => ({ ...current, [next]: page }));
+      } catch (chunkError) {
+        setError(
+          friendlyApiError(chunkError, "Could not load source excerpts")
+            .message,
+        );
+      }
     }
   }
 
@@ -221,9 +234,9 @@ export function KnowledgeBase({
                 <p className="eyebrow">Fictional demo workspace</p>
                 <h2>Northstar Systems support corpus</h2>
                 <p>
-                  These documents are original fictional examples for a
-                  private technical-support assistant. They are not customer
-                  material and do not represent production usage.
+                  These documents are original fictional examples for a private
+                  technical-support assistant. They are not customer material
+                  and do not represent production usage.
                 </p>
               </div>
             </div>
@@ -261,18 +274,25 @@ export function KnowledgeBase({
                       </p>
                     )}
                   </div>
-                  <label className="button button-primary cursor-pointer">
+                  <label
+                    className={`button button-primary cursor-pointer ${fileSubmitting ? "opacity-70" : ""}`}
+                    aria-disabled={fileSubmitting}
+                  >
                     <FileUp className="h-4 w-4" aria-hidden />
-                    Choose files
+                    {fileSubmitting ? "Uploading" : "Choose files"}
                     <input
                       type="file"
                       multiple
                       accept=".md,.markdown,.txt,.html,.htm,.pdf,text/markdown,text/plain,text/html,application/pdf"
                       className="sr-only"
-                      onChange={(event) =>
-                        event.target.files &&
-                        void acceptFiles(event.target.files)
-                      }
+                      disabled={fileSubmitting}
+                      onChange={(event) => {
+                        const files = Array.from(
+                          event.currentTarget.files ?? [],
+                        );
+                        event.currentTarget.value = "";
+                        if (files.length > 0) void acceptFiles(files);
+                      }}
                     />
                   </label>
                 </div>
@@ -293,9 +313,10 @@ export function KnowledgeBase({
                   <button
                     className="button"
                     type="button"
+                    disabled={urlSubmitting || !url.trim()}
                     onClick={() => void submitUrl()}
                   >
-                    Submit URL
+                    {urlSubmitting ? "Submitting" : "Submit URL"}
                   </button>
                 </div>
               </div>
@@ -334,14 +355,14 @@ export function KnowledgeBase({
                   <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                     <div className="min-w-0">
                       <div className="font-semibold">
-                        {statusLabel(job.status)}
+                        {documentStatusLabel(job.status)}
                       </div>
                       <div className="mono mt-1 truncate text-xs text-[var(--graphite)]">
                         {job.id}
                       </div>
                     </div>
-                    <span className={statusClass(job.status)}>
-                      {statusLabel(job.status)}
+                    <span className={documentStatusClass(job.status)}>
+                      {documentStatusLabel(job.status)}
                     </span>
                   </div>
                   <progress
@@ -424,8 +445,12 @@ export function KnowledgeBase({
                             </td>
                             <td className="mono">v{document.version}</td>
                             <td>
-                              <span className="status-label status-success">
-                                {statusLabel(document.source_status)}
+                              <span
+                                className={documentStatusClass(
+                                  document.source_status,
+                                )}
+                              >
+                                {documentStatusLabel(document.source_status)}
                               </span>
                             </td>
                             <td>{document.chunk_count}</td>
@@ -529,8 +554,12 @@ export function KnowledgeBase({
                         <div>
                           <dt>Status</dt>
                           <dd>
-                              <span className="status-label status-success">
-                              {statusLabel(document.source_status)}
+                            <span
+                              className={documentStatusClass(
+                                document.source_status,
+                              )}
+                            >
+                              {documentStatusLabel(document.source_status)}
                             </span>
                           </dd>
                         </div>

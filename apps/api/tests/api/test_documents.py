@@ -18,8 +18,8 @@ async def test_missing_document_returns_structured_404(monkeypatch) -> None:
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get(f"/api/v1/documents/{uuid4()}")
 
-    assert response.status_code in {404, 500}
-    assert "error" in response.json()
+    assert response.status_code == 404
+    assert response.json()["error"]["message"] == "Document not found."
 
 
 def _set_test_principal(*, role: str | None) -> None:

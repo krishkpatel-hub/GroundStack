@@ -1,8 +1,10 @@
+import {
+  API_BASE_URL,
+  apiErrorMessage,
+  apiRequest,
+  friendlyApiError,
+} from "@/lib/api";
 import { type Citation, type RetrievalFilters } from "@/lib/retrieval";
-import { friendlyApiError } from "@/lib/knowledge";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export type Conversation = {
   id: string;
@@ -60,92 +62,65 @@ export async function fetchConversations(
     limit: String(options.limit ?? 50),
     offset: String(options.offset ?? 0),
   });
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/api/v1/conversations?${params}`, {
-      cache: "no-store",
+  return apiRequest(
+    `/api/v1/conversations?${params}`,
+    {
       signal: options.signal,
-    });
-  } catch (error) {
-    throw friendlyApiError(error, "Conversation load failed.");
-  }
-  if (!response.ok) {
-    throw new Error(`Conversation load failed with ${response.status}`);
-  }
-  return response.json() as Promise<Conversation[]>;
+    },
+    "Conversation load failed",
+  );
 }
 
 export async function createConversation(
   title?: string,
 ): Promise<Conversation> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/conversations`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title }),
-    cache: "no-store",
-  });
-  if (!response.ok)
-    throw new Error(`Conversation create failed with ${response.status}`);
-  return response.json() as Promise<Conversation>;
+  return apiRequest(
+    "/api/v1/conversations",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    },
+    "Conversation create failed",
+  );
 }
 
 export async function updateConversation(
   conversationId: string,
   payload: { title?: string; archived?: boolean },
 ): Promise<Conversation> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/conversations/${conversationId}`,
+  return apiRequest(
+    `/api/v1/conversations/${conversationId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      cache: "no-store",
     },
+    "Conversation update failed",
   );
-  if (!response.ok)
-    throw new Error(`Conversation update failed with ${response.status}`);
-  return response.json() as Promise<Conversation>;
 }
 
 export async function deleteConversation(
   conversationId: string,
 ): Promise<void> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/conversations/${conversationId}`,
+  await apiRequest(
+    `/api/v1/conversations/${conversationId}`,
     {
       method: "DELETE",
-      cache: "no-store",
     },
+    "Conversation delete failed",
   );
-  if (!response.ok)
-    throw new Error(`Conversation delete failed with ${response.status}`);
-}
-
-export async function fetchConversationsLegacy(
-  signal?: AbortSignal,
-): Promise<Conversation[]> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/conversations`, {
-    cache: "no-store",
-    signal,
-  });
-  if (!response.ok) {
-    throw new Error(`Conversation load failed with ${response.status}`);
-  }
-  return response.json() as Promise<Conversation[]>;
 }
 
 export async function fetchConversationMessages(
   conversationId: string,
   signal?: AbortSignal,
 ): Promise<ConversationMessage[]> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/conversations/${conversationId}/messages`,
-    { cache: "no-store", signal },
+  return apiRequest(
+    `/api/v1/conversations/${conversationId}/messages`,
+    { signal },
+    "Message load failed",
   );
-  if (!response.ok) {
-    throw new Error(`Message load failed with ${response.status}`);
-  }
-  return response.json() as Promise<ConversationMessage[]>;
 }
 
 export async function* streamChat(
@@ -171,7 +146,12 @@ export async function* streamChat(
   }
 
   if (!response.ok || !response.body) {
-    throw new Error(`Chat stream failed with ${response.status}`);
+    throw new Error(
+      await apiErrorMessage(
+        response,
+        `Chat stream failed with ${response.status}`,
+      ),
+    );
   }
 
   const reader = response.body.getReader();

@@ -1,3 +1,5 @@
+import { apiRequest } from "@/lib/api";
+
 export type IngestionJob = {
   id: string;
   source_id: string | null;
@@ -49,49 +51,48 @@ export type Page<T> = {
   items: T[];
 };
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-
 export const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
+export const ACCEPTED_FILE_EXTENSIONS = [
+  ".md",
+  ".markdown",
+  ".txt",
+  ".html",
+  ".htm",
+  ".pdf",
+] as const;
 export const ACCEPTED_FILE_TYPES = [
   "Markdown",
   "plain text",
   "HTML",
   "text-based PDF",
-];
+] as const;
 
-export function friendlyApiError(error: unknown, fallback: string): Error {
-  if (error instanceof TypeError) {
-    return new Error(
-      "GroundStack cannot reach the API. Start the local backend, then try again.",
-    );
-  }
-  if (error instanceof Error) return error;
-  return new Error(fallback);
+export function documentStatusLabel(status: string) {
+  if (status === "failed" || status === "deleted") return "Failed";
+  if (status === "processing" || status === "queued") return "Processing";
+  return "Ready";
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      cache: "no-store",
-      ...init,
-    });
-  } catch (error) {
-    throw friendlyApiError(error, "Request failed");
+export function documentStatusClass(status: string) {
+  if (status === "failed" || status === "deleted")
+    return "status-label status-danger";
+  if (status === "processing" || status === "queued")
+    return "status-label status-warning";
+  return "status-label status-success";
+}
+
+export function validateKnowledgeFile(file: File): string | null {
+  if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+    return `${file.name} is larger than the 10 MB upload limit.`;
   }
-  if (!response.ok) {
-    let detail = "";
-    try {
-      const body = await response.json();
-      detail = body?.error?.message || body?.detail || "";
-    } catch {
-      detail = "";
-    }
-    throw new Error(detail || `Request failed with ${response.status}`);
+  const lowerName = file.name.toLowerCase();
+  const accepted = ACCEPTED_FILE_EXTENSIONS.some((extension) =>
+    lowerName.endsWith(extension),
+  );
+  if (!accepted) {
+    return `${file.name} is not a supported document type. Use Markdown, plain text, HTML, or text-based PDF.`;
   }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  return null;
 }
 
 export async function uploadKnowledgeFile(
@@ -99,28 +100,40 @@ export async function uploadKnowledgeFile(
 ): Promise<{ job_id: string; status: string }> {
   const body = new FormData();
   body.append("file", file);
-  return request("/api/v1/ingestions/files", { method: "POST", body });
+  return apiRequest("/api/v1/ingestions/files", { method: "POST", body });
 }
 
 export async function submitKnowledgeUrl(
   url: string,
 ): Promise<{ job_id: string; status: string }> {
-  return request("/api/v1/ingestions/url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-  });
+  return apiRequest(
+    "/api/v1/ingestions/url",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    },
+    "URL ingestion failed",
+  );
 }
 
 export async function fetchIngestionJob(jobId: string): Promise<IngestionJob> {
-  return request(`/api/v1/ingestions/${jobId}`);
+  return apiRequest(
+    `/api/v1/ingestions/${jobId}`,
+    undefined,
+    "Ingestion job load failed",
+  );
 }
 
 export async function fetchDocuments(
   limit = 20,
   offset = 0,
 ): Promise<Page<DocumentItem>> {
-  return request(`/api/v1/documents?limit=${limit}&offset=${offset}`);
+  return apiRequest(
+    `/api/v1/documents?limit=${limit}&offset=${offset}`,
+    undefined,
+    "Document load failed",
+  );
 }
 
 export async function fetchDocumentChunks(
@@ -128,11 +141,17 @@ export async function fetchDocumentChunks(
   limit = 10,
   offset = 0,
 ): Promise<Page<DocumentChunk>> {
-  return request(
+  return apiRequest(
     `/api/v1/documents/${documentId}/chunks?limit=${limit}&offset=${offset}`,
+    undefined,
+    "Document passages failed",
   );
 }
 
 export async function deleteDocument(documentId: string): Promise<void> {
-  await request(`/api/v1/documents/${documentId}`, { method: "DELETE" });
+  await apiRequest(
+    `/api/v1/documents/${documentId}`,
+    { method: "DELETE" },
+    "Document deletion failed",
+  );
 }

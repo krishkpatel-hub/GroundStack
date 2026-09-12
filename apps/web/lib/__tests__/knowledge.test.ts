@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  documentStatusLabel,
   fetchDocuments,
   fetchIngestionJob,
+  MAX_UPLOAD_SIZE_BYTES,
   submitKnowledgeUrl,
+  validateKnowledgeFile,
 } from "@/lib/knowledge";
 import { searchRetrieval } from "@/lib/retrieval";
 
@@ -38,10 +41,39 @@ describe("knowledge API utilities", () => {
   });
 
   it("throws on job fetch failure", async () => {
-    global.fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: false, status: 404 }) as unknown as typeof fetch;
-    await expect(fetchIngestionJob("missing")).rejects.toThrow("404");
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: { message: "Ingestion job not found." } }),
+    }) as unknown as typeof fetch;
+    await expect(fetchIngestionJob("missing")).rejects.toThrow(
+      "Ingestion job not found.",
+    );
+  });
+
+  it("validates obvious unsupported uploads before network submission", () => {
+    const unsupported = new File(["hello"], "notes.docx", {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    const markdown = new File(["# Setup"], "setup.md", {
+      type: "text/markdown",
+    });
+    const oversized = new File(["x"], "large.md");
+    Object.defineProperty(oversized, "size", {
+      value: MAX_UPLOAD_SIZE_BYTES + 1,
+    });
+
+    expect(validateKnowledgeFile(unsupported)).toContain(
+      "not a supported document type",
+    );
+    expect(validateKnowledgeFile(oversized)).toContain("10 MB upload limit");
+    expect(validateKnowledgeFile(markdown)).toBeNull();
+  });
+
+  it("maps internal document source status to user-facing labels", () => {
+    expect(documentStatusLabel("active")).toBe("Ready");
+    expect(documentStatusLabel("queued")).toBe("Processing");
+    expect(documentStatusLabel("failed")).toBe("Failed");
   });
 
   it("submits retrieval search with filters", async () => {

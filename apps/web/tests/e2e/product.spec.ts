@@ -5,7 +5,11 @@ const conversationId = "11111111-1111-1111-1111-111111111111";
 const messageId = "22222222-2222-2222-2222-222222222222";
 const documentId = "33333333-3333-3333-3333-333333333333";
 
-async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
+async function mockApi(
+  page: Page,
+  role: "anonymous" | "admin" = "admin",
+  options: { onChatStream?: () => void } = {},
+) {
   await page.route("**/api/v1/auth/me", (route) =>
     route.fulfill({
       json:
@@ -134,6 +138,7 @@ async function mockApi(page: Page, role: "anonymous" | "admin" = "admin") {
     }),
   );
   await page.route("**/api/v1/chat/stream", async (route) => {
+    options.onChatStream?.();
     const body = route.request().postDataJSON() as { question?: string };
     const unsupported = body.question?.includes("parental-leave");
     return route.fulfill({
@@ -177,10 +182,11 @@ test("landing page opens the workspace and completes a cited answer", async ({
     }),
   ).toBeVisible();
   await expect(page.getByText("Northstar Systems is fictional")).toBeVisible();
-  await page
+  const workspaceLink = page
     .getByRole("main")
-    .getByRole("link", { name: "Open workspace" })
-    .click();
+    .getByRole("link", { name: "Open workspace" });
+  await expect(workspaceLink).toHaveAttribute("href", "/ask");
+  await page.goto("/ask");
   await expect(page.getByRole("heading", { name: "Workspace" })).toBeVisible();
   await expect(
     page.getByText("Fictional demo workspace", { exact: true }),
@@ -194,9 +200,7 @@ test("landing page opens the workspace and completes a cited answer", async ({
     .getByRole("textbox", { name: "Question" })
     .fill("What does DB-104 mean, and how should I resolve it?");
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(
-    page.getByText("schema readiness check"),
-  ).toBeVisible();
+  await expect(page.getByText("schema readiness check")).toBeVisible();
   await page.getByRole("button", { name: "[S1]" }).click();
   await expect(
     page.getByRole("dialog", { name: "Source evidence" }),
@@ -208,6 +212,28 @@ test("landing page opens the workspace and completes a cited answer", async ({
   await expect(page.getByRole("dialog")).toBeHidden();
   await page.getByRole("button", { name: "Helpful" }).click();
   await expect(page.getByText("Saved")).toBeVisible();
+});
+
+test("chat submission is guarded against rapid duplicate sends", async ({
+  page,
+}) => {
+  let chatRequests = 0;
+  await mockApi(page, "admin", {
+    onChatStream: () => {
+      chatRequests += 1;
+    },
+  });
+  await page.goto("/ask");
+  await page
+    .getByLabel("Example questions")
+    .getByRole("button", {
+      name: "What does DB-104 mean, and how should I resolve it?",
+    })
+    .click();
+  const send = page.getByRole("button", { name: "Send" });
+  await Promise.all([send.dispatchEvent("click"), send.dispatchEvent("click")]);
+  await expect(page.getByText("schema readiness check")).toBeVisible();
+  expect(chatRequests).toBe(1);
 });
 
 test("northstar unsupported question returns insufficient evidence", async ({
@@ -242,13 +268,39 @@ test("admin core routes expose source and document-management states", async ({
   await expect(
     page.getByRole("heading", { name: "Knowledge base" }),
   ).toBeVisible();
-  await expect(page.getByText("Northstar Systems support corpus")).toBeVisible();
+  await expect(
+    page.getByText("Northstar Systems support corpus"),
+  ).toBeVisible();
   await expect(page.getByText("Maximum file size: 10 MB")).toBeVisible();
   await page.getByRole("button", { name: "Delete" }).click();
   await expect(
     page.getByRole("dialog", { name: "Delete document?" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Cancel" }).click();
+});
+
+test("document upload rejects unsupported file types before submission", async ({
+  page,
+}) => {
+  let uploadRequests = 0;
+  await mockApi(page, "admin");
+  await page.route("**/api/v1/ingestions/files", (route) => {
+    uploadRequests += 1;
+    return route.fulfill({
+      json: { job_id: "job", status: "queued" },
+    });
+  });
+  await page.goto("/knowledge");
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "policy.docx",
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    buffer: Buffer.from("not supported"),
+  });
+  await expect(
+    page.getByText("policy.docx is not a supported document type"),
+  ).toBeVisible();
+  expect(uploadRequests).toBe(0);
 });
 
 test("anonymous navigation hides admin destinations", async ({ page }) => {
@@ -299,6 +351,23 @@ test("mobile navigation and axe scan pass the core landing page", async ({
     .disableRules(["color-contrast"])
     .analyze();
   expect(results.violations).toEqual([]);
+});
+
+test("core workspace routes avoid horizontal overflow at reviewed widths", async ({
+  page,
+}) => {
+  await mockApi(page, "admin");
+  for (const width of [320, 375, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ["/", "/ask", "/knowledge", "/sources"]) {
+      await page.goto(route);
+      await page.getByRole("main").waitFor({ state: "visible" });
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(1);
+    }
+  }
 });
 
 test("core routes do not emit browser console errors", async ({ page }) => {

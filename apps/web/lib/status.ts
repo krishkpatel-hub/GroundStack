@@ -1,3 +1,5 @@
+import { apiRequest } from "@/lib/api";
+
 export type SystemStatus = {
   application: string;
   environment: string;
@@ -30,20 +32,8 @@ export type SystemStatus = {
   };
 };
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-
 export async function fetchSystemStatus(
   signal?: AbortSignal,
 ): Promise<SystemStatus> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/system/status`, {
-    signal,
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Status check failed with ${response.status}`);
-  }
-
-  return response.json() as Promise<SystemStatus>;
+  return apiRequest("/api/v1/system/status", { signal }, "Status check failed");
 }

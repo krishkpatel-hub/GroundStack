@@ -20,8 +20,14 @@ const steps = [
     "Seed or upload approved docs",
     "The demo uses fictional Northstar Systems support documentation.",
   ],
-  ["Ask a support question", "Employees ask about VPN, access, incidents, deployments, and API issues."],
-  ["Review source evidence", "Every supported answer links back to the document excerpts that justify it."],
+  [
+    "Ask a support question",
+    "Employees ask about VPN, access, incidents, deployments, and API issues.",
+  ],
+  [
+    "Review source evidence",
+    "Every supported answer links back to the document excerpts that justify it.",
+  ],
 ] as const;
 
 export default function Home() {
@@ -82,8 +88,8 @@ export default function Home() {
         >
           <h2 id="sources-title">Source-backed answers</h2>
           <p>
-            GroundStack separates generated answers from source evidence. If
-            the Northstar demo corpus does not cover a question, the assistant
+            GroundStack separates generated answers from source evidence. If the
+            Northstar demo corpus does not cover a question, the assistant
             should say it lacks enough evidence instead of inventing a policy.
           </p>
         </section>

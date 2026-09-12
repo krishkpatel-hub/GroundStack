@@ -4,7 +4,10 @@ import { ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 import { AppFrame } from "@/components/app-frame";
+import { friendlyApiError } from "@/lib/api";
 import {
+  documentStatusClass,
+  documentStatusLabel,
   fetchDocumentChunks,
   fetchDocuments,
   type DocumentChunk,
@@ -25,9 +28,7 @@ export function SourceInventory() {
       setDocuments(await fetchDocuments(20, 0));
       setError(null);
     } catch (loadError) {
-      setError(
-        loadError instanceof Error ? loadError.message : "Source load failed",
-      );
+      setError(friendlyApiError(loadError, "Source load failed").message);
     } finally {
       setLoading(false);
     }
@@ -46,8 +47,15 @@ export function SourceInventory() {
         ...current,
         [next]: { total: 0, limit: 10, offset: 0, items: [] },
       }));
-      const page = await fetchDocumentChunks(next, 10, 0);
-      setChunks((current) => ({ ...current, [next]: page }));
+      try {
+        const page = await fetchDocumentChunks(next, 10, 0);
+        setChunks((current) => ({ ...current, [next]: page }));
+      } catch (chunkError) {
+        setError(
+          friendlyApiError(chunkError, "Could not load source passages")
+            .message,
+        );
+      }
     }
   }
 
@@ -106,8 +114,10 @@ export function SourceInventory() {
                     </td>
                     <td>{document.display_name}</td>
                     <td>
-                      <span className="status-label status-success">
-                        {document.source_status}
+                      <span
+                        className={documentStatusClass(document.source_status)}
+                      >
+                        {documentStatusLabel(document.source_status)}
                       </span>
                     </td>
                     <td>{document.chunk_count}</td>

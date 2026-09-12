@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { apiRequest } from "@/lib/api";
 
 export type EvaluationRun = {
   id: string;
@@ -20,10 +19,9 @@ export type EvaluationRun = {
 };
 
 export async function fetchEvaluationRuns(): Promise<EvaluationRun[]> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/evaluation/runs`, {
-    cache: "no-store",
-  });
-  if (!response.ok)
-    throw new Error(`Evaluation load failed with ${response.status}`);
-  return response.json() as Promise<EvaluationRun[]>;
+  return apiRequest(
+    "/api/v1/evaluation/runs",
+    undefined,
+    "Evaluation load failed",
+  );
 }

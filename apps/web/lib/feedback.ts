@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { apiRequest } from "@/lib/api";
 
 export const feedbackCategories = [
   "incorrect_answer",
@@ -40,16 +39,13 @@ export async function saveFeedback(
   messageId: string,
   payload: FeedbackPayload,
 ): Promise<FeedbackResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/messages/${messageId}/feedback`,
+  return apiRequest(
+    `/api/v1/messages/${messageId}/feedback`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      cache: "no-store",
     },
+    "Feedback save failed",
   );
-  if (!response.ok)
-    throw new Error(`Feedback save failed with ${response.status}`);
-  return response.json() as Promise<FeedbackResponse>;
 }

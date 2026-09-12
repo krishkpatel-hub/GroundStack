@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { apiRequest } from "@/lib/api";
 
 export type TrainingCandidate = {
   id: string;
@@ -20,12 +19,11 @@ export type TrainingCandidate = {
 };
 
 export async function fetchTrainingCandidates(): Promise<TrainingCandidate[]> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/training/candidates`, {
-    cache: "no-store",
-  });
-  if (!response.ok)
-    throw new Error(`Training candidates failed with ${response.status}`);
-  return response.json() as Promise<TrainingCandidate[]>;
+  return apiRequest(
+    "/api/v1/training/candidates",
+    undefined,
+    "Training candidates failed",
+  );
 }
 
 export async function updateTrainingCandidate(
@@ -43,16 +41,13 @@ export async function updateTrainingCandidate(
     >
   >,
 ): Promise<TrainingCandidate> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/training/candidates/${candidateId}`,
+  return apiRequest(
+    `/api/v1/training/candidates/${candidateId}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      cache: "no-store",
     },
+    "Training update failed",
   );
-  if (!response.ok)
-    throw new Error(`Training update failed with ${response.status}`);
-  return response.json() as Promise<TrainingCandidate>;
 }

@@ -2,8 +2,7 @@
 
 import { AlertTriangle } from "lucide-react";
 
-export const API_UNAVAILABLE_MESSAGE =
-  "GroundStack cannot reach the API. Start the local backend, then try again.";
+import { API_UNAVAILABLE_MESSAGE } from "@/lib/api";
 
 export function isApiUnavailableMessage(message: string | null | undefined) {
   return Boolean(message?.startsWith(API_UNAVAILABLE_MESSAGE));

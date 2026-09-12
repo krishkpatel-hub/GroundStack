@@ -16,10 +16,19 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { ApiConnectionAlert } from "@/components/api-connection-alert";
 import { AppFrame } from "@/components/app-frame";
 import { WorkspaceNav } from "@/components/workspace-nav";
 import {
@@ -100,6 +109,19 @@ export function AppShell({
   const loading =
     stage === "Retrieving evidence" || stage === "Generating answer";
 
+  const loadWorkspaceDocuments = useCallback(async () => {
+    try {
+      const page = await fetchDocuments(100, 0);
+      setDocuments(page.items);
+      setDocumentsLoadError(null);
+    } catch (loadError) {
+      setDocuments([]);
+      setDocumentsLoadError(
+        friendlyApiError(loadError, "Could not load documents.").message,
+      );
+    }
+  }, []);
+
   async function loadConversations() {
     const items = await fetchConversations().catch(() => []);
     setConversations(items.filter((item) => !item.archived));
@@ -116,18 +138,16 @@ export function AppShell({
       });
     fetchDocuments(100, 0)
       .then((page) => {
-        if (active) {
-          setDocuments(page.items);
-          setDocumentsLoadError(null);
-        }
+        if (!active) return;
+        setDocuments(page.items);
+        setDocumentsLoadError(null);
       })
       .catch((loadError) => {
-        if (active) {
-          setDocuments([]);
-          setDocumentsLoadError(
-            friendlyApiError(loadError, "Could not load documents.").message,
-          );
-        }
+        if (!active) return;
+        setDocuments([]);
+        setDocumentsLoadError(
+          friendlyApiError(loadError, "Could not load documents.").message,
+        );
       });
     return () => {
       active = false;
@@ -525,10 +545,10 @@ export function AppShell({
           </div>
           <div className="message-list">
             {documentsLoadError && (
-              <div className="inline-alert" role="alert">
-                <AlertTriangle className="inline h-4 w-4" aria-hidden />{" "}
-                {documentsLoadError}
-              </div>
+              <ApiConnectionAlert
+                message={documentsLoadError}
+                onRetry={() => void loadWorkspaceDocuments()}
+              />
             )}
             {!documentsLoadError && !hasDocuments && (
               <div className="empty-chat">

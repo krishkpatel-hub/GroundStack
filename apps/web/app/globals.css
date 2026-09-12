@@ -562,6 +562,21 @@ select:focus-visible {
   line-height: 1.5;
 }
 
+.dev-details {
+  color: var(--graphite-strong);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.dev-details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dev-details p {
+  margin-top: 6px;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

@@ -98,6 +98,7 @@ class RetrievalConfigResponse(BaseModel):
     reranking_enabled: bool
     reranker_provider: str
     reranker_model: str
+    min_reranker_score: float
     persist_retrieval_queries: bool
     debug_enabled: bool
 

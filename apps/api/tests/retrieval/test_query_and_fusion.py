@@ -5,6 +5,7 @@ import pytest
 from app.services.ai.types import RetrievalCandidate
 from app.services.retrieval.fusion import (
     build_citations,
+    filter_relevant_candidates,
     fuse_candidates,
     select_diverse_candidates,
 )
@@ -113,6 +114,18 @@ def test_diversity_removes_duplicates_and_enforces_source_limit() -> None:
     assert len(selected) == 1
     assert candidates[1].exclusion_reason == "duplicate_chunk_checksum"
     assert candidates[2].exclusion_reason == "source_limit"
+
+
+def test_relevance_filter_removes_low_reranker_scores() -> None:
+    low = candidate(vector_rank=1)
+    low.reranker_score = -1.5
+    high = candidate(vector_rank=2)
+    high.reranker_score = 3.0
+
+    relevant = filter_relevant_candidates([low, high], min_reranker_score=0.0)
+
+    assert relevant == [high]
+    assert low.exclusion_reason == "below_relevance_threshold"
 
 
 def test_citation_numbering_matches_final_order() -> None:

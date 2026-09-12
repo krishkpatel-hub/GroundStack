@@ -73,6 +73,13 @@ def _set_chat_principal() -> None:
     app.dependency_overrides[optional_principal] = principal
 
 
+def _set_unauthenticated_principal() -> None:
+    async def principal():
+        return None
+
+    app.dependency_overrides[optional_principal] = principal
+
+
 async def test_feedback_put_is_idempotent_shape(monkeypatch) -> None:
     async def no_limit(_request):
         return None
@@ -123,6 +130,7 @@ async def test_feedback_put_rejects_unauthenticated_request(monkeypatch) -> None
     async def no_limit(_request):
         return None
 
+    _set_unauthenticated_principal()
     monkeypatch.setattr("app.api.v1.feedback._enforce_feedback_limit", no_limit)
     message_id = "11111111-1111-1111-1111-111111111111"
     transport = ASGITransport(app=app)

@@ -63,7 +63,7 @@ export const ACCEPTED_FILE_TYPES = [
 export function friendlyApiError(error: unknown, fallback: string): Error {
   if (error instanceof TypeError) {
     return new Error(
-      "GroundStack cannot reach the API at http://localhost:8000. Start the FastAPI backend and PostgreSQL, then try again.",
+      "GroundStack cannot reach the API. Start the local backend, then try again.",
     );
   }
   if (error instanceof Error) return error;

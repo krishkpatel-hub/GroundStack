@@ -19,6 +19,14 @@ class FailingReranker:
         raise RerankerError("boom", category="test_failure")
 
 
+class LowScoringReranker:
+    async def rerank(self, _query, candidates):
+        ranked = [candidate.model_copy(deep=True) for candidate in candidates]
+        for candidate in ranked:
+            candidate.reranker_score = -2.0
+        return ranked
+
+
 class StaticRepo:
     def __init__(self, *_args):
         self.run_id = uuid4()
@@ -88,3 +96,36 @@ async def test_retriever_returns_degraded_mode_when_reranker_fails(
     else:
         assert result.degraded_mode is None
         assert result.trace.reranking_mode == "disabled"
+
+
+async def test_retriever_returns_no_evidence_when_reranker_scores_are_too_low(
+    monkeypatch,
+) -> None:
+    from app.core.settings import Settings
+
+    class Session:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def commit(self):
+            return None
+
+    monkeypatch.setattr("app.services.retrieval.service.async_session_factory", lambda: Session())
+    monkeypatch.setattr("app.services.retrieval.service.RetrievalRepository", StaticRepo)
+    settings = Settings(reranking_enabled=True, retrieval_min_reranker_score=0.0)
+    retriever = HybridRetriever(
+        embedding_provider=DeterministicEmbeddingProvider(),
+        reranker=LowScoringReranker(),
+        settings=settings,
+    )
+
+    result = await retriever.retrieve(
+        RetrievalQuery(text="unrelated cooking question", filters=RetrievalFilters(), limit=3)
+    )
+
+    assert result.evidence_found is False
+    assert result.citations == []
+    assert result.candidates == []

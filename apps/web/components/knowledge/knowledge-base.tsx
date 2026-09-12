@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
+import { ApiConnectionAlert } from "@/components/api-connection-alert";
 import { AppFrame } from "@/components/app-frame";
 import { WorkspaceNav } from "@/components/workspace-nav";
 import {
@@ -298,8 +299,11 @@ export function KnowledgeBase({
           </div>
 
           {error && (
-            <div className="inline-alert mt-4" role="alert">
-              {error}
+            <div className="mt-4">
+              <ApiConnectionAlert
+                message={error}
+                onRetry={() => void loadDocuments(offset)}
+              />
             </div>
           )}
 

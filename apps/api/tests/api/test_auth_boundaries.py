@@ -39,6 +39,13 @@ def _set_test_principal(*, role: str) -> None:
     app.dependency_overrides[optional_principal] = principal
 
 
+def _set_unauthenticated_principal() -> None:
+    async def principal():
+        return None
+
+    app.dependency_overrides[optional_principal] = principal
+
+
 async def test_admin_route_allows_development_admin(monkeypatch) -> None:
     _set_test_principal(role="admin")
     monkeypatch.setattr("app.api.v1.evaluation.async_session_factory", lambda: FakeSession())
@@ -59,6 +66,7 @@ async def test_admin_route_rejects_non_admin_development_user(monkeypatch) -> No
 
 
 async def test_admin_route_rejects_unauthenticated_request() -> None:
+    _set_unauthenticated_principal()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/api/v1/evaluation/runs")

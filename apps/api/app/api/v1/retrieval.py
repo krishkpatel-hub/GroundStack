@@ -63,6 +63,7 @@ async def retrieval_config() -> RetrievalConfigResponse:
         reranking_enabled=settings.reranking_enabled,
         reranker_provider=settings.reranker_provider,
         reranker_model=settings.reranker_model_name,
+        min_reranker_score=settings.retrieval_min_reranker_score,
         persist_retrieval_queries=settings.persist_retrieval_queries,
         debug_enabled=settings.retrieval_debug_enabled,
     )

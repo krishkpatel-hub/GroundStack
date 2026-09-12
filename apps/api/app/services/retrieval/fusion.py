@@ -87,6 +87,20 @@ def select_diverse_candidates(
     return selected
 
 
+def filter_relevant_candidates(
+    candidates: list[RetrievalCandidate],
+    *,
+    min_reranker_score: float,
+) -> list[RetrievalCandidate]:
+    relevant: list[RetrievalCandidate] = []
+    for candidate in candidates:
+        if candidate.reranker_score is None or candidate.reranker_score >= min_reranker_score:
+            relevant.append(candidate)
+            continue
+        candidate.exclusion_reason = "below_relevance_threshold"
+    return relevant
+
+
 def excerpt_text(text: str, *, max_length: int = 420) -> str:
     clean = " ".join(text.split())
     if len(clean) <= max_length:

@@ -14,6 +14,7 @@ from app.services.ai.types import (
 )
 from app.services.retrieval.fusion import (
     build_citations,
+    filter_relevant_candidates,
     fuse_candidates,
     select_diverse_candidates,
 )
@@ -55,6 +56,7 @@ class HybridRetriever(Retriever):
             "retrieval_final_top_k": top_k,
             "max_chunks_per_source": self.settings.max_chunks_per_source,
             "reranking_enabled": self.settings.reranking_enabled,
+            "retrieval_min_reranker_score": self.settings.retrieval_min_reranker_score,
             "embedding_model": self.settings.embedding_model_name,
             "reranker_model": self.settings.reranker_model_name,
         }
@@ -131,8 +133,16 @@ class HybridRetriever(Retriever):
             latency["reranking"] = _ms(rerank_start)
 
             selection_start = perf_counter()
+            relevance_input = (
+                filter_relevant_candidates(
+                    reranked,
+                    min_reranker_score=self.settings.retrieval_min_reranker_score,
+                )
+                if reranking_applied
+                else reranked
+            )
             selected = select_diverse_candidates(
-                reranked,
+                relevance_input,
                 top_k=top_k,
                 max_chunks_per_source=self.settings.max_chunks_per_source,
             )

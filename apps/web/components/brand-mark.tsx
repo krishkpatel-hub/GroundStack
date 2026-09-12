@@ -26,10 +26,10 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
       </svg>
       {!compact && (
         <div>
-          <div className="text-[1rem] font-semibold leading-5 tracking-normal">
+          <div className="brand-wordmark text-[1rem] font-semibold leading-5 tracking-normal">
             GroundStack
           </div>
-          <div className="mt-0.5 text-xs leading-4 text-[var(--graphite)]">
+          <div className="brand-subtitle mt-0.5 text-xs leading-4">
             Knowledge workspace
           </div>
         </div>

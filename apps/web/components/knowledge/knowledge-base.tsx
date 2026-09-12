@@ -7,7 +7,14 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { ApiConnectionAlert } from "@/components/api-connection-alert";
 import { AppFrame } from "@/components/app-frame";
@@ -70,6 +77,8 @@ export function KnowledgeBase({
   const [deleteTarget, setDeleteTarget] = useState<DocumentItem | null>(null);
   const [fileSubmitting, setFileSubmitting] = useState(false);
   const [urlSubmitting, setUrlSubmitting] = useState(false);
+  const deleteDialogRef = useRef<HTMLElement | null>(null);
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const loadDocuments = useCallback(
     async (nextOffset = offset) => {
@@ -116,6 +125,35 @@ export function KnowledgeBase({
     }, 1600);
     return () => window.clearInterval(interval);
   }, [jobs, loadDocuments]);
+
+  useEffect(() => {
+    if (!deleteTarget) return;
+    deleteDialogRef.current?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setDeleteTarget(null);
+        window.requestAnimationFrame(() => deleteTriggerRef.current?.focus());
+        return;
+      }
+      if (event.key !== "Tab" || !deleteDialogRef.current) return;
+      const focusable = Array.from(
+        deleteDialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [deleteTarget]);
 
   async function acceptFiles(files: FileList | File[]) {
     if (fileSubmitting) return;
@@ -482,9 +520,13 @@ export function KnowledgeBase({
                             {mode === "admin" && (
                               <td>
                                 <button
-                                  className="button min-h-9 px-2 py-1"
+                                  className="button button-danger min-h-9 px-2 py-1"
                                   type="button"
-                                  onClick={() => setDeleteTarget(document)}
+                                  onClick={(event) => {
+                                    deleteTriggerRef.current =
+                                      event.currentTarget;
+                                    setDeleteTarget(document);
+                                  }}
                                 >
                                   <Trash2 className="h-4 w-4" aria-hidden />
                                   Delete
@@ -575,29 +617,34 @@ export function KnowledgeBase({
                           </dd>
                         </div>
                       </dl>
-                      <button
-                        className="button min-h-9 w-full px-2 py-1"
-                        type="button"
-                        aria-expanded={isExpanded}
-                        onClick={() => void toggleDocument(document.id)}
-                      >
-                        {isExpanded ? (
-                          <ChevronDown className="h-4 w-4" aria-hidden />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" aria-hidden />
-                        )}
-                        Source excerpts
-                      </button>
-                      {mode === "admin" && (
+                      <div className="document-actions">
                         <button
-                          className="button min-h-9 w-full px-2 py-1"
+                          className="button min-h-9 px-2 py-1"
                           type="button"
-                          onClick={() => setDeleteTarget(document)}
+                          aria-expanded={isExpanded}
+                          onClick={() => void toggleDocument(document.id)}
                         >
-                          <Trash2 className="h-4 w-4" aria-hidden />
-                          Delete document
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" aria-hidden />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" aria-hidden />
+                          )}
+                          Source excerpts
                         </button>
-                      )}
+                        {mode === "admin" && (
+                          <button
+                            className="button button-danger min-h-9 px-2 py-1"
+                            type="button"
+                            onClick={(event) => {
+                              deleteTriggerRef.current = event.currentTarget;
+                              setDeleteTarget(document);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden />
+                            Delete
+                          </button>
+                        )}
+                      </div>
                       {isExpanded && (
                         <div className="space-y-3">
                           {(chunks[document.id]?.items ?? []).map((chunk) => (
@@ -655,13 +702,20 @@ export function KnowledgeBase({
         <div
           className="modal-backdrop"
           role="presentation"
-          onClick={() => setDeleteTarget(null)}
+          onClick={() => {
+            setDeleteTarget(null);
+            window.requestAnimationFrame(() =>
+              deleteTriggerRef.current?.focus(),
+            );
+          }}
         >
           <section
+            ref={deleteDialogRef}
             className="modal-panel"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-document-title"
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
           >
             <h2 id="delete-document-title" className="section-title">
@@ -676,7 +730,12 @@ export function KnowledgeBase({
               <button
                 className="button"
                 type="button"
-                onClick={() => setDeleteTarget(null)}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  window.requestAnimationFrame(() =>
+                    deleteTriggerRef.current?.focus(),
+                  );
+                }}
               >
                 Cancel
               </button>

@@ -92,6 +92,13 @@ function newLocalId(prefix: string) {
   return `${prefix}-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
 }
 
+function groundingStatusLabel(status: string) {
+  if (status === "grounded") return "Supported by sources";
+  if (status === "insufficient_evidence") return "Insufficient evidence";
+  if (status === "generation_failed") return "Generation failed";
+  return status.replaceAll("_", " ");
+}
+
 export function AppShell({
   initialQuestion = "",
 }: {
@@ -503,9 +510,13 @@ export function AppShell({
   return (
     <AppFrame
       title="Workspace"
-      description="Ask questions against approved organizational documentation and inspect the supporting evidence."
+      description="Ask questions against approved documentation and inspect the supporting evidence."
       actions={
-        <button className="button" type="button" onClick={startNewConversation}>
+        <button
+          className="button button-primary"
+          type="button"
+          onClick={startNewConversation}
+        >
           <MessageSquarePlus className="h-4 w-4" aria-hidden />
           New chat
         </button>
@@ -536,7 +547,7 @@ export function AppShell({
             placeholder="Title or first question"
           />
           {selectedConversation && (
-            <div className="mt-4 border-t border-[var(--border)] pt-4">
+            <div className="conversation-actions">
               {editingTitle ? (
                 <div className="space-y-2">
                   <label htmlFor="conversation-title" className="label">
@@ -567,7 +578,7 @@ export function AppShell({
                 </div>
               ) : (
                 <button
-                  className="button min-h-9 w-full"
+                  className="button min-h-9"
                   type="button"
                   onClick={() => {
                     setTitleDraft(selectedConversation.title ?? "");
@@ -575,12 +586,12 @@ export function AppShell({
                   }}
                 >
                   <Pencil className="h-4 w-4" aria-hidden />
-                  Rename selected
+                  Rename
                 </button>
               )}
-              <div className="mt-2">
+              <div>
                 <button
-                  className="button min-h-9 w-full"
+                  className="button button-danger min-h-9"
                   type="button"
                   onClick={() =>
                     deleteArmed
@@ -589,9 +600,7 @@ export function AppShell({
                   }
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
-                  {deleteArmed
-                    ? "Confirm delete selected conversation"
-                    : "Delete selected conversation"}
+                  {deleteArmed ? "Confirm delete" : "Delete"}
                 </button>
                 {deleteArmed && (
                   <p className="mt-2 text-xs leading-5 text-[var(--danger)]">
@@ -621,6 +630,16 @@ export function AppShell({
               >
                 <span className="truncate">
                   {conversation.title ?? "Untitled conversation"}
+                </span>
+                <span className="conversation-meta">
+                  {new Date(
+                    conversation.last_message_at ?? conversation.updated_at,
+                  ).toLocaleString([], {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
                 </span>
               </button>
             ))}
@@ -898,7 +917,7 @@ const MessageBubble = memo(function MessageBubble({
               return (
                 <div key={citationId} className="citation-item">
                   <button
-                    className="button min-h-8"
+                    className="button citation-button min-h-8"
                     type="button"
                     onClick={(event) =>
                       citation && onOpenCitation(citation, event.currentTarget)
@@ -911,9 +930,12 @@ const MessageBubble = memo(function MessageBubble({
             })}
           </div>
         )}
-      {message.groundingStatus && (
-        <span className="status-label mt-3">{message.groundingStatus}</span>
-      )}
+      {message.groundingStatus &&
+        message.groundingStatus !== "generation_failed" && (
+          <span className="status-label mt-3">
+            {groundingStatusLabel(message.groundingStatus)}
+          </span>
+        )}
       {message.role === "assistant" &&
         message.status === "completed" &&
         message.id && <FeedbackControls message={message} />}
@@ -933,7 +955,25 @@ function SourcePanel({
   useEffect(() => {
     panelRef.current?.focus();
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusable = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -1088,9 +1128,11 @@ function FeedbackControls({ message }: { message: LocalMessage }) {
           <ThumbsDown className="h-4 w-4" aria-hidden />
           Needs work
         </button>
-        <span className="status-label" aria-live="polite">
-          {saving ? "Saving" : saved ? "Saved" : ""}
-        </span>
+        {(saving || saved) && (
+          <span className="status-label" aria-live="polite">
+            {saving ? "Saving" : "Saved"}
+          </span>
+        )}
       </div>
       {rating === "negative" && (
         <div className="feedback-detail">

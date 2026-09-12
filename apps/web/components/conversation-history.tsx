@@ -140,6 +140,17 @@ export function ConversationHistory() {
                         <span className="truncate">
                           {conversation.title || "Untitled conversation"}
                         </span>
+                        <span className="conversation-meta">
+                          {new Date(
+                            conversation.last_message_at ??
+                              conversation.updated_at,
+                          ).toLocaleString([], {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       </button>
                     ))}
                 </div>

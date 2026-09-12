@@ -266,15 +266,25 @@ test("landing page opens the workspace and completes a cited answer", async ({
   await expect(
     page.getByText("validation worker could not confirm"),
   ).toBeVisible();
-  await page.getByRole("button", { name: "[S1]" }).click();
+  const citationButton = page.getByRole("button", { name: "[S1]" });
+  await citationButton.click();
   await expect(
     page.getByRole("dialog", { name: "Source evidence" }),
   ).toBeVisible();
   await expect(
     page.getByText("GroundStack Presentation Validation Document"),
   ).toBeVisible();
+  const closeSource = page
+    .getByRole("dialog", { name: "Source evidence" })
+    .getByRole("button", { name: "Close source viewer" });
+  await closeSource.focus();
+  await closeSource.press("Shift+Tab");
+  await expect(
+    page.getByRole("link", { name: "Open documents" }),
+  ).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(citationButton).toBeFocused();
   await page.getByRole("button", { name: "Helpful" }).click();
   await expect(page.getByText("Saved")).toBeVisible();
   await page.getByRole("button", { name: "New chat" }).click();
@@ -381,6 +391,8 @@ test("admin core routes expose source and document-management states", async ({
     page.getByText("Start with approved documentation"),
   ).toBeVisible();
   await expect(page.getByText("Maximum file size: 10 MB")).toBeVisible();
+  const documentResults = await new AxeBuilder({ page }).analyze();
+  expect(documentResults.violations).toEqual([]);
   await page.getByRole("button", { name: "Delete" }).click();
   await expect(
     page.getByRole("dialog", { name: "Delete document?" }),
@@ -466,6 +478,55 @@ test("mobile navigation and axe scan pass the core landing page", async ({
   ).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+});
+
+test("workspace navigation and document dialog preserve keyboard focus", async ({
+  page,
+}) => {
+  await mockApi(page, "admin");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ask");
+
+  const openNavigation = page.getByRole("button", {
+    name: "Open navigation",
+  });
+  await openNavigation.click();
+  await expect(page.getByLabel("Primary navigation")).toHaveClass(
+    /sidebar-open/,
+  );
+  const navigationResults = await new AxeBuilder({ page }).analyze();
+  expect(navigationResults.violations).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(page.getByLabel("Primary navigation")).not.toHaveClass(
+    /sidebar-open/,
+  );
+  await expect(openNavigation).toBeFocused();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const askTab = page
+    .getByLabel("Workspace views")
+    .getByRole("tab", { name: "Ask" });
+  await askTab.focus();
+  await askTab.press("ArrowRight");
+  await expect(page).toHaveURL(/\/knowledge$/);
+
+  const deleteButton = page.getByRole("button", {
+    name: "Delete",
+    exact: true,
+  });
+  await deleteButton.click();
+  await expect(
+    page.getByRole("dialog", { name: "Delete document?" }),
+  ).toBeVisible();
+  const cancelDelete = page.getByRole("button", { name: "Cancel" });
+  await cancelDelete.focus();
+  await cancelDelete.press("Shift+Tab");
+  await expect(
+    page.getByRole("button", { name: "Delete document" }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(deleteButton).toBeFocused();
 });
 
 test("landing animation and workflow tabs support keyboard control", async ({

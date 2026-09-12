@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { fetchAuthInfo, type AuthInfo } from "@/lib/auth";
@@ -29,7 +29,7 @@ type AppFrameProps = {
 
 const publicItems = [
   { href: "/", label: "Overview", icon: Home },
-  { href: "/ask", label: "Workspace", icon: MessageSquare },
+  { href: "/ask", label: "Ask", icon: MessageSquare },
   { href: "/about", label: "How it works", icon: FileText },
 ];
 
@@ -50,6 +50,9 @@ export function AppFrame({
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileViewport, setMobileViewport] = useState(false);
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const [auth, setAuth] = useState<AuthInfo>({
     authenticated: false,
     anonymous: true,
@@ -77,6 +80,49 @@ export function AppFrame({
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const updateViewport = () => setMobileViewport(media.matches);
+    updateViewport();
+    media.addEventListener("change", updateViewport);
+    return () => media.removeEventListener("change", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileOpen || !mobileViewport) return;
+    const sidebar = sidebarRef.current;
+    const focusable = Array.from(
+      sidebar?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    );
+    focusable[0]?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+        return;
+      }
+      if (event.key !== "Tab" || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen, mobileViewport]);
+
+  function closeMobileNavigation() {
+    setMobileOpen(false);
+    window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+  }
+
   const navGroups = useMemo(() => {
     const groups = [{ label: "Product", items: publicItems }];
     if (auth.authenticated) groups.push({ label: "Account", items: userItems });
@@ -94,14 +140,16 @@ export function AppFrame({
           className="mobile-backdrop md:hidden"
           type="button"
           aria-label="Close navigation"
-          onClick={() => setMobileOpen(false)}
+          onClick={closeMobileNavigation}
         />
       )}
       <aside
+        ref={sidebarRef}
         className={`sidebar ${collapsed ? "sidebar-collapsed" : ""} ${
           mobileOpen ? "sidebar-open" : ""
         }`}
         aria-label="Primary navigation"
+        inert={mobileViewport && !mobileOpen ? true : undefined}
       >
         <div className="flex h-14 items-center justify-between border-b border-[var(--border)] px-3">
           <Link
@@ -127,7 +175,7 @@ export function AppFrame({
             className="button mobile-only-control h-9 min-h-9 w-9 p-0"
             type="button"
             aria-label="Close navigation"
-            onClick={() => setMobileOpen(false)}
+            onClick={closeMobileNavigation}
           >
             <X className="h-4 w-4" />
           </button>
@@ -184,9 +232,10 @@ export function AppFrame({
 
       <div className="main-workspace">
         <header className="page-header">
-          <div className="workspace-inner flex flex-wrap items-start justify-between gap-4 py-4">
-            <div className="flex min-w-0 gap-3">
+          <div className="workspace-inner page-header-inner">
+            <div className="page-heading">
               <button
+                ref={menuButtonRef}
                 className="button mobile-only-control h-10 min-h-10 w-10 p-0"
                 type="button"
                 aria-label="Open navigation"
@@ -200,11 +249,15 @@ export function AppFrame({
               </div>
             </div>
             {actions && (!requireAdmin || auth.admin) && (
-              <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>
+              <div className="page-actions">{actions}</div>
             )}
           </div>
         </header>
-        <main id="main-content" className="workspace-inner" tabIndex={-1}>
+        <main
+          id="main-content"
+          className="workspace-inner workspace-content"
+          tabIndex={-1}
+        >
           {requireAdmin && !authLoaded ? (
             <div className="empty-chat">
               <h2 className="text-xl font-semibold">Checking access</h2>

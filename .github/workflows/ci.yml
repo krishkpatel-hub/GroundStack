@@ -104,7 +104,7 @@ jobs:
         with:
           persist-credentials: false
       # docker/setup-buildx-action v3.11.0
-      - uses: docker/setup-buildx-action@18ce135bb5112fa8ce4ed6c17ab05699d7f3a5e0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
       - run: docker build -f apps/api/Dockerfile -t groundstack-api:ci .
       - run: docker build -f apps/web/Dockerfile -t groundstack-web:ci .
 
